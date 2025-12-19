@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://www.ngdc.noaa.gov/metadata/published/xsd/ngdcSchema/schema.xsd">
+   <idinfo>
+      <datsetid>gov.noaa.nmfs.inport:70063</datsetid>
+      <citation>
+         <citeinfo>
+            <pubdate>20201005</pubdate>
+            <title>2020 SEWRPC Lidar DEM: Milwaukee County, WI</title>
+         </citeinfo>
+      </citation>
+      <descript>
+         <abstract>
+              This metadata record was derived from an ISO format record and may be missing components. See the ISO version for more information.
+                This Southeastern Wisconsin Regional Planning Commission (SEWRPC) high density lidar project encompassed the entirety of Milwaukee County, Wisconsin, which covers approximately 250 square miles and includes a 333 foot buffer around the county boundary. The airborne lidar data was acquired at an aggregate nominal point density (ANPD) of 30 points per square meter. Project specifications are based on SEWRPC requirements. The data was developed and delivered in State Plane Coordinates, Wisconsin South zone, with a horizontal datum of NAD83(2011) and vertical datum of NAVD88 - Geoid12B, with horizontal and vertical units in US Survey Feet. LiDAR data was acquired using a Riegl VQ 1560i sensor, serial number 4040, from April 2, 2020 to April 3, 2020 in three total lifts. Lidar acquisition occurred with leaves absent from deciduous trees, when no snow was present on the ground and with rivers at or below normal levels. The lidar data was calibrated, processed, and delivered in 2020. The data deliverables include classified point cloud, breaklines, and a digital elevation model. The lidar data is not to be used for purposes other than those outlined by SEWRPC for its partners and stakeholders on this project.
+
+This metadata record supports the data entry in the NOAA Digital Coast Data Access Viewer (DAV).
+The NOAA Office for Coastal Management (OCM) received ERDAS Imagine (.img) raster files at a 1 ft grid spacing from the Milwaukee County Land Information Office. The data were processed to the NOAA Digital Coast Data Access Viewer (DAV) to make the data available for bulk and custom downloads. In addition to these bare earth Digital Elevation Model (DEM) data, the lidar point data that these DEM data were created from, are also available. These data are available for custom download at the link provided in the URL section of this metadata record.
+This data set is a raster file with 5287 columns and 3720 rows and may have been mosaiced, reprojected, and clipped from the original tiles. The data set was generated from a larger data set and includes all valid data within the requested geographic bounds.
+		</abstract>
+         <purpose>This data, along with its derivatives, is the result of a countywide elevation mapping with cooperative partnerships from Southeastern Wisconsin Regional Planning Commission (SEWRPC). This data was produced from lidar data collected in April 2020, which was processed and delivered in October 2020.</purpose>
+      </descript>
+      <status>
+         <progress>Complete</progress>
+         <update>notPlanned</update>
+      </status>
+      <spdom>
+         <bounding>
+            <westbc>
+		-87.93603177
+		</westbc>
+            <eastbc>
+		-87.91658712
+		</eastbc>
+            <northbc>43.195998</northbc>
+            <southbc>42.837963</southbc>
+         </bounding>
+      </spdom>
+      <keywords>
+         <theme>
+            <themekt>Global Change Master Directory (GCMD) Science Keywords</themekt>
+            <themekey>EARTH SCIENCE &gt; LAND SURFACE &gt; TOPOGRAPHY &gt; TERRAIN ELEVATION</themekey>
+            <themekey>EARTH SCIENCE &gt; LAND SURFACE &gt; TOPOGRAPHY &gt; TERRAIN ELEVATION &gt; DIGITAL ELEVATION/TERRAIN MODEL (DEM)</themekey>
+            <themekey>EARTH SCIENCE &gt; OCEANS &gt; COASTAL PROCESSES &gt; COASTAL ELEVATION</themekey>
+         </theme>
+         <place>
+            <placekt>Global Change Master Directory (GCMD) Location Keywords</placekt>
+            <placekey>CONTINENT &gt; NORTH AMERICA &gt; UNITED STATES OF AMERICA</placekey>
+            <placekey>CONTINENT &gt; NORTH AMERICA &gt; UNITED STATES OF AMERICA &gt; WISCONSIN</placekey>
+            <placekey>VERTICAL LOCATION &gt; LAND SURFACE</placekey>
+         </place>
+      </keywords>
+      <accconst>Restriction Code: otherRestrictions;  </accconst>
+      <useconst>Use Limitation: NOAA provides no warranty, nor accepts any liability occurring from any incomplete, incorrect, or misleading data, or from any incorrect, incomplete, or misleading use of the data. It is the responsibility of the user to determine whether or not the data is suitable for the intended purpose.;   Use Limitation: ;   Other: 
+		This data set was compiled dynamically, and will exist on https://chs.coast.noaa.gov/pickup/dav/1206920/wi2020_milwaukee_dem_J1206920.zip until 10 days after 06/26/2025. The file will then be deleted from the system.
+			Cite As: OCM Partners, [Date of Access]: 2020 SEWRPC Lidar DEM: Milwaukee County, WI [Data Date Range], https://www.fisheries.noaa.gov/inport/item/70063.;   Other: 
+		This data set was compiled dynamically, and will exist on https://chs.coast.noaa.gov/pickup/dav/1206920/wi2020_milwaukee_dem_J1206920.zip until 10 days after 06/26/2025. The file will then be deleted from the system.
+			Access Constraints: None;   Other: 
+		This data set was compiled dynamically, and will exist on https://chs.coast.noaa.gov/pickup/dav/1206920/wi2020_milwaukee_dem_J1206920.zip until 10 days after 06/26/2025. The file will then be deleted from the system.
+			Use Constraints: Users should be aware that temporal changes may have occurred since this data set was collected and some parts of this data may no longer represent actual surface conditions. Users should not use this data for critical applications without a full awareness of its limitations.  The lidar data is not to be used for purposes other than those outlined by SEWRPC for its partners and stakeholders on this project. Acknowledgement of the Southeastern Wisconsin Regional Planning Commission (SEWRPC) would be appreciated for products derived from these data.;   Other: 
+		This data set was compiled dynamically, and will exist on https://chs.coast.noaa.gov/pickup/dav/1206920/wi2020_milwaukee_dem_J1206920.zip until 10 days after 06/26/2025. The file will then be deleted from the system.
+			Distribution Liability: Any conclusions drawn from the analysis of this information are not the responsibility of NOAA, the Office for Coastal Management or its partners.;   </useconst>
+   </idinfo>
+   <distinfo>
+      <distrib>
+         <cntinfo>
+            <cntorgp>
+               <cntorg>NOAA Office for Coastal Management</cntorg>
+            </cntorgp>
+            <cntaddr>
+               <addrtype>physical and mailing</addrtype>
+               <address>2234 South Hobson Ave</address>
+               <city>Charleston</city>
+               <state>SC</state>
+               <postal>29405-2413</postal>
+            </cntaddr>
+            <cntvoice>(843) 740-1202</cntvoice>
+            <cntemail>coastal.info@noaa.gov</cntemail>
+         </cntinfo>
+      </distrib>
+      <distliab>Unknown </distliab>
+   </distinfo>
+   <metainfo>
+      <metd>20240229</metd>
+      <metc>
+         <cntinfo>
+            <cntperp>
+               <cntorg>OCM Partners</cntorg>
+            </cntperp>
+            <cntaddr>
+               <addrtype>mailing and physical</addrtype>
+            </cntaddr>
+            <cntvoice>missing</cntvoice>
+         </cntinfo>
+      </metc>
+      <metc>
+         <cntinfo>
+            <cntperp>
+               <cntorg>NOAA Office for Coastal Management</cntorg>
+            </cntperp>
+            <cntaddr>
+               <addrtype>mailing and physical</addrtype>
+               <address>2234 South Hobson Ave</address>
+               <city>Charleston</city>
+               <state>SC</state>
+               <postal>29405-2413</postal>
+            </cntaddr>
+            <cntvoice>(843) 740-1202</cntvoice>
+            <cntemail>coastal.info@noaa.gov</cntemail>
+         </cntinfo>
+      </metc>
+      <metstdn>Content Standard for Digital Geospatial Metadata: Extensions for Remote Sensing Metadata</metstdn>
+      <metstdv>FGDC-STD-012-2002</metstdv>
+   </metainfo>
+</metadata>

@@ -1,0 +1,261 @@
+import numpy as np
+import struct
+from scipy.interpolate import griddata
+
+def read_stl_binary(filename):
+    """Read binary STL file and return vertices."""
+    vertices = []
+    
+    with open(filename, 'rb') as f:
+        f.read(80)  # Skip header
+        num_triangles = struct.unpack('<I', f.read(4))[0]
+        print(f"Reading {num_triangles} triangles...")
+        
+        for i in range(num_triangles):
+            if i % 50000 == 0:
+                print(f"Progress: {i}/{num_triangles}")
+            
+            f.read(12)  # Skip normal
+            # Read 3 vertices
+            for _ in range(3):
+                x, y, z = struct.unpack('<3f', f.read(12))
+                vertices.append([x, y, z])
+            f.read(2)  # Skip attribute
+    
+    return np.array(vertices)
+
+def read_stl_ascii(filename):
+    """Read ASCII STL file and return vertices."""
+    vertices = []
+    with open(filename, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('vertex'):
+                coords = line.split()[1:4]
+                vertices.append([float(x) for x in coords])
+    return np.array(vertices)
+
+def read_stl(filename):
+    """Read STL file (auto-detect format)."""
+    try:
+        return read_stl_binary(filename)
+    except:
+        try:
+            return read_stl_ascii(filename)
+        except Exception as e:
+            raise Exception(f"Could not read STL file: {e}")
+
+def write_stl_binary(filename, triangles):
+    """Write valid triangles to binary STL file."""
+    print(f"Writing {len(triangles)} triangles to {filename}...")
+    
+    with open(filename, 'wb') as f:
+        # Write header
+        header = b'Continuous terrain mesh' + b'\0' * (80 - len(b'Continuous terrain mesh'))
+        f.write(header)
+        
+        # Write triangle count
+        f.write(struct.pack('<I', len(triangles)))
+        
+        # Write each triangle
+        for i, triangle in enumerate(triangles):
+            if i % 5000 == 0:
+                print(f"Writing triangle {i}/{len(triangles)}")
+            
+            # Calculate normal vector
+            v1 = triangle[1] - triangle[0]
+            v2 = triangle[2] - triangle[0]
+            normal = np.cross(v1, v2)
+            norm = np.linalg.norm(normal)
+            if norm > 1e-10:
+                normal = normal / norm
+            else:
+                normal = np.array([0.0, 0.0, 1.0])
+            
+            # Write normal
+            f.write(struct.pack('<fff', normal[0], normal[1], normal[2]))
+            
+            # Write vertices
+            for vertex in triangle:
+                f.write(struct.pack('<fff', float(vertex[0]), float(vertex[1]), float(vertex[2])))
+            
+            # Write attribute
+            f.write(struct.pack('<H', 0))
+    
+    print(f"STL written successfully: {len(triangles)} triangles")
+
+def extract_ground_points(vertices, sample_ratio=0.1):
+    """
+    Extract ground-level points by sampling building base vertices.
+    Creates a more comprehensive set of points for terrain interpolation.
+    """
+    print("Extracting ground points from buildings...")
+    
+    # Find the overall minimum Z (absolute ground level)
+    z_min = vertices[:, 2].min()
+    z_threshold = z_min + (vertices[:, 2].max() - z_min) * 0.1  # Bottom 10% of height range
+    
+    print(f"Z range: {vertices[:, 2].min():.2f} to {vertices[:, 2].max():.2f}")
+    print(f"Ground threshold: {z_threshold:.2f}")
+    
+    # Get vertices near ground level
+    ground_mask = vertices[:, 2] <= z_threshold
+    ground_vertices = vertices[ground_mask]
+    
+    print(f"Found {len(ground_vertices)} vertices near ground level")
+    
+    # Sample points to avoid too much data
+    if len(ground_vertices) > 10000:
+        sample_size = int(len(ground_vertices) * sample_ratio)
+        indices = np.random.choice(len(ground_vertices), sample_size, replace=False)
+        ground_vertices = ground_vertices[indices]
+        print(f"Sampled down to {len(ground_vertices)} points")
+    
+    return ground_vertices
+
+def create_continuous_terrain(ground_points, margin_factor=0.15, resolution=100):
+    """
+    Create a continuous terrain surface by interpolating ground points over a regular grid.
+    """
+    print(f"Creating continuous terrain surface at {resolution}x{resolution} resolution...")
+    
+    # Get bounds and add margins
+    x_min, x_max = ground_points[:, 0].min(), ground_points[:, 0].max()
+    y_min, y_max = ground_points[:, 1].min(), ground_points[:, 1].max()
+    
+    x_range = x_max - x_min
+    y_range = y_max - y_min
+    x_margin = x_range * margin_factor
+    y_margin = y_range * margin_factor
+    
+    # Extended bounds for terrain
+    terrain_x_min = x_min - x_margin
+    terrain_x_max = x_max + x_margin
+    terrain_y_min = y_min - y_margin
+    terrain_y_max = y_max + y_margin
+    
+    print(f"Terrain bounds: X({terrain_x_min:.1f} to {terrain_x_max:.1f}), Y({terrain_y_min:.1f} to {terrain_y_max:.1f})")
+    
+    # Create regular grid for interpolation
+    x_grid = np.linspace(terrain_x_min, terrain_x_max, resolution)
+    y_grid = np.linspace(terrain_y_min, terrain_y_max, resolution)
+    X, Y = np.meshgrid(x_grid, y_grid)
+    
+    # Interpolate Z values across the grid using the ground points
+    print("Interpolating terrain heights...")
+    
+    # Use scipy's griddata for smooth interpolation
+    points = ground_points[:, :2]  # XY coordinates of ground points
+    values = ground_points[:, 2]   # Z values of ground points
+    grid_points = np.column_stack([X.ravel(), Y.ravel()])
+    
+    # Interpolate using 'linear' method for smooth terrain
+    Z_interp = griddata(points, values, grid_points, method='linear', fill_value=values.min())
+    Z = Z_interp.reshape(resolution, resolution)
+    
+    # Fill any remaining NaN values
+    mask = np.isnan(Z)
+    if np.any(mask):
+        Z[mask] = values.min()
+        print(f"Filled {np.sum(mask)} NaN values with minimum height")
+    
+    print(f"Terrain elevation range: {Z.min():.2f} to {Z.max():.2f}")
+    
+    # Generate triangular mesh from the grid
+    print("Generating triangular mesh...")
+    triangles = []
+    
+    for i in range(resolution - 1):
+        for j in range(resolution - 1):
+            # Get the 4 corners of current grid cell
+            x1, x2 = X[i, j], X[i, j+1]
+            y1, y2 = Y[i, j], Y[i+1, j]
+            
+            z11 = Z[i, j]       # bottom-left
+            z12 = Z[i, j+1]     # bottom-right
+            z21 = Z[i+1, j]     # top-left
+            z22 = Z[i+1, j+1]   # top-right
+            
+            # Define the 4 vertices of the quad
+            v11 = np.array([x1, y1, z11])
+            v12 = np.array([x2, y1, z12])
+            v21 = np.array([x1, y2, z21])
+            v22 = np.array([x2, y2, z22])
+            
+            # Create two triangles per quad (proper winding order)
+            triangles.append(np.array([v11, v12, v21]))  # Lower triangle
+            triangles.append(np.array([v12, v22, v21]))  # Upper triangle
+    
+    triangles = np.array(triangles)
+    print(f"Generated {len(triangles)} triangles for continuous terrain")
+    
+    return triangles
+
+def generate_terrain_from_buildings(input_stl, output_stl, margin_factor=0.2, resolution=80, sample_ratio=0.1):
+    """
+    Generate a continuous terrain surface from building STL.
+    
+    Args:
+        input_stl: Input STL file containing buildings
+        output_stl: Output terrain STL file
+        margin_factor: Terrain extension beyond buildings (0.2 = 20% margin)
+        resolution: Grid resolution for terrain (80 = 80x80 grid = ~12,800 triangles)
+        sample_ratio: Fraction of ground points to use for interpolation (0.1 = 10%)
+    """
+    print(f"=== GENERATING CONTINUOUS TERRAIN FROM {input_stl} ===")
+    
+    # Read building vertices
+    vertices = read_stl(input_stl)
+    print(f"Loaded {len(vertices)} vertices from buildings")
+    
+    # Extract ground-level points from buildings
+    ground_points = extract_ground_points(vertices, sample_ratio)
+    
+    # Create continuous terrain surface
+    triangles = create_continuous_terrain(ground_points, margin_factor, resolution)
+    
+    # Write terrain STL
+    write_stl_binary(output_stl, triangles)
+    
+    # Verify the output
+    try:
+        import os
+        file_size = os.path.getsize(output_stl)
+        print(f"Output file: {output_stl}")
+        print(f"File size: {file_size:,} bytes")
+        
+        # Test reading the file back
+        test_vertices = read_stl(output_stl)
+        print(f"Verification: Read {len(test_vertices)} vertices from output file")
+        
+        print(f"=== TERRAIN GENERATION SUCCESSFUL ===")
+        print(f"Generated a continuous terrain surface with {len(triangles)} triangles")
+        
+    except Exception as e:
+        print(f"Warning: Could not verify output file: {e}")
+
+# Example usage
+if __name__ == "__main__":
+    input_file = "/Users/omokayj/Library/CloudStorage/OneDrive-MarquetteUniversity/Research/Fall 25 - Research/Geometry/STLs/buildingsKilbourn0904.stl"  # Your buildings STL file
+    output_file = "/Users/omokayj/Library/CloudStorage/OneDrive-MarquetteUniversity/Research/Fall 25 - Research/Geometry/pythonMod/terrain.stl"  # Output terrain file
+    
+    try:
+        generate_terrain_from_buildings(
+            input_stl=input_file,
+            output_stl=output_file,
+            margin_factor=0.25,    # 25% margin around buildings
+            resolution=60          # 60x60 final terrain mesh
+        )
+        
+    except ImportError:
+        print("Error: This script requires scipy for interpolation.")
+        print("Install with: pip install scipy")
+        
+    except FileNotFoundError:
+        print(f"Error: Cannot find input file '{input_file}'")
+        print("Please update the input_file variable with your buildings STL filename.")
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
