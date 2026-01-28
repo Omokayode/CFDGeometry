@@ -456,13 +456,16 @@ def process_multiple_shapefiles_with_combined_offset(shapefile_list, output_dir,
 if __name__ == "__main__":
     
     # Example 1: Single shapefile with combined offset calculation
-    shapefile = "windAroundBuildings/Tools/input/kilbourntoClybourn.shp"
-    output_stl = "windAroundBuildings/Tools/output/buildingsKilbourn.stl"
+    # shapefile = "windAroundBuildings/Tools/input/kilbourntoClybourn.shp"
+    # output_stl = "windAroundBuildings/Tools/output/buildingsKilbourn.stl"
+    shapefile = "/home/omokayj/marquetteDrive/Research/s26Research/shp/okcity.shp"
+    output_stl = "/home/omokayj/marquetteDrive/Research/s26Research/shp/okcity_python.stl"
     
     # List of all shapefiles for combined offset (even if processing one at a time)
     all_shapefiles = [
-        "windAroundBuildings/Tools/input/kilbourntoClybourn.shp",
-        "windAroundBuildings/Tools/input/treesshapefileKilbourn.shp"
+        # "windAroundBuildings/Tools/input/kilbourntoClybourn.shp",
+        # "windAroundBuildings/Tools/input/treesshapefileKilbourn.shp"
+        "/home/omokayj/marquetteDrive/Research/s26Research/shp/okcity.shp"
         # Add other shapefile paths here for combined offset calculation
     ]
     
