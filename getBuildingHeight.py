@@ -397,7 +397,7 @@ def combine_height_sources(shapefile_path, output_path=None):
 # Example usage
 if __name__ == "__main__":
     
-    shapefile = "windAroundBuildings/Tools/input/kilbourntoClybourn.shp"
+    shapefile = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/kilbourntoClybourn.shp"
     
     print("🏢 Building Height Extraction Methods\n")
     
@@ -409,7 +409,7 @@ if __name__ == "__main__":
     # Method 2: Estimate from area (quickest method)
     buildings_with_heights = estimate_heights_from_footprint_area(
         shapefile, 
-        "windAroundBuildings/Tools/output/buildings_with_estimated_heights.shp"
+        "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/buildings_with_estimated_heights.shp"
     )
     
     print("\n" + "="*50)
@@ -417,7 +417,7 @@ if __name__ == "__main__":
     # Method 3: Try OSM data
     buildings_with_osm = get_osm_building_heights(
         shapefile,
-        "windAroundBuildings/Tools/output/buildings_with_osm_heights.shp" 
+        "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/buildings_with_osm_heights.shp" 
     )
     
     print("\n" + "="*50)
@@ -425,5 +425,5 @@ if __name__ == "__main__":
     # Method 4: Combine all sources
     final_buildings = combine_height_sources(
         shapefile,
-        "windAroundBuildings/Tools/output/buildings_final_heights.shp"
+        "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/buildings_final_heights.shp"
     )

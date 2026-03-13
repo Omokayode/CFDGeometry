@@ -231,25 +231,25 @@ def main():
     # =============================================================================
     
     # File paths
-    # INPUT_FILE = "windAroundBuildings/Tools/output/wRaster/highwayKilbourn.stl"          # Path to input STL file
-    # OUTPUT_FILE = "windAroundBuildings/Tools/output/highwayKilbourn_clipped.stl"       # Path to output STL file
+    # INPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/wRaster/highwayKilbourn.stl"          # Path to input STL file
+    # OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/highwayKilbourn_clipped.stl"       # Path to output STL file
     
-    # INPUT_FILE = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/output/terrainMarquette.stl"
-    # OUTPUT_FILE = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/output/terrainMarquetteClipped.stl"      # Path to output STL file
+    # INPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainMarquette.stl"
+    # OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainMarquetteClipped.stl"      # Path to output STL file
 
 
     #TERRAIN CONSSERVATIVE_FIXED_clipped.stl
-    INPUT_FILE = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/output/terrainSimplification/terrain_Marquette_conservative_fixed.stl"
-    OUTPUT_FILE = "/Users/omokayj/Library/CloudStorage/OneDrive-MarquetteUniversity/Research/Research - Fall 25/3dprint/terrain_Marquette_conservative_fixed_clipped.stl"      # Path to output STL file
+    INPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainSimplification/terrain_Marquette_conservative_fixed.stl"
+    OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrain_Marquette_conservative_fixed_clipped.stl"      # Path to output STL file
 
     #highwayKilbourn_clipped.stl
-    # INPUT_FILE = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/output/wRaster/highwayKilbourn.stl"
-    # OUTPUT_FILE = "/Users/omokayj/Library/CloudStorage/OneDrive-MarquetteUniversity/Research/Research - Fall 25/3dprint/highwayKilbourn_clipped.stl"
+    # INPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/wRaster/highwayKilbourn.stl"
+    # OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/highwayKilbourn_clipped.stl"
 
 
     #TREES
-    # INPUT_FILE = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/output/wRaster/treesKilbourn1028_cone.stl"
-    # OUTPUT_FILE = "/Users/omokayj/Library/CloudStorage/OneDrive-MarquetteUniversity/Research/Research - Fall 25/3dprint/treesKilbourn1028_cone_clipped.stl"
+    # INPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/wRaster/treesKilbourn1028_cone.stl"
+    # OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/treesKilbourn1028_cone_clipped.stl"
     # Clipping bounds: [xmin, ymin, zmin, xmax, ymax, zmax]
     # CLIP_BOUNDS = [-452.90, -402.33, 570, 550.99, 406.98, 704.98]
     # CLIP_BOUNDS = [-650, -635, 576, 645, 613, 715]

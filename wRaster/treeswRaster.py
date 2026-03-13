@@ -585,10 +585,10 @@ def validate_tree_stl(stl_file):
 if __name__ == "__main__":
     
     # Define paths
-    tree_shp = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/input/treesshapefileKilbourn.shp"
-    building_shp = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/input/kilbourntoClybourn.shp"
-    output_path = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/output/wRaster/treesKilbourn1028.stl"
-    elevation_tif = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/input/demdataforground/demdataforground.tif"
+    tree_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/treesshapefileKilbourn.shp"
+    building_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/kilbourntoClybourn.shp"
+    output_path = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/wRaster/treesKilbourn1028.stl"
+    elevation_tif = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/demdataforground/demdataforground.tif"
 
     # Hardcoded offset values (replace with your actual values)
     HARDCODED_OFFSET_X = 424265.04  # Replace with your actual offset

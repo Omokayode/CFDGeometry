@@ -32,6 +32,6 @@ def get_combined_offset(shapefile_paths, target_epsg=32616):
     
     return offset_x, offset_y
 
-tree_shp = "windAroundBuildings/Tools/input/treesshapefileKilbourn.shp"
-buildings_shp = "windAroundBuildings/Tools/input/kilbourntoClybourn.shp"
+tree_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/treesshapefileKilbourn.shp"
+buildings_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/kilbourntoClybourn.shp"
 offset_x, offset_y = get_combined_offset([tree_shp, buildings_shp])

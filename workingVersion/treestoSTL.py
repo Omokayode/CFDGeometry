@@ -354,9 +354,9 @@ def validate_tree_stl(stl_file):
 if __name__ == "__main__":
     
     # Define paths
-    tree_shp = "windAroundBuildings/Tools/input/treesshapefileKilbourn.shp"
-    building_shp = "windAroundBuildings/Tools/input/kilbourntoClybourn.shp"
-    output_path = "windAroundBuildings/Tools/output/treesKilbourn.stl"
+    tree_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/treesshapefileKilbourn.shp"
+    building_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/kilbourntoClybourn.shp"
+    output_path = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/treesKilbourn.stl"
     
     # Step 1: Calculate combined offset from both shapefiles for alignment
     print("🔄 Calculating combined offset for alignment...")

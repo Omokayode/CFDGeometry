@@ -229,8 +229,8 @@ def main():
     # =============================================================================
     
     # File paths
-    INPUT_FILE = "windAroundBuildings/Tools/output/terrainKilbourn.stl"          # Path to input STL file
-    OUTPUT_FILE = "windAroundBuildings/Tools/output/terrainKilbourn_clipped.stl"       # Path to output STL file
+    INPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainKilbourn.stl"          # Path to input STL file
+    OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainKilbourn_clipped.stl"       # Path to output STL file
     
     # Clipping bounds: [xmin, ymin, zmin, xmax, ymax, zmax]
     CLIP_BOUNDS = [-352.90, -302.33, 580, 350.99, 306.98, 704.98]

@@ -516,11 +516,11 @@ def validate_stl(stl_file):
 if __name__ == "__main__":
     
     # Define paths
-    tree_shp = "windAroundBuildings/Tools/input/treesshapefileKilbourn.shp"
-    building_shp = "windAroundBuildings/Tools/input/kilbourntoClybourn.shp"
-    highway_shp = "windAroundBuildings/Tools/input/highwayKilbourn.shp"  
+    tree_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/treesshapefileKilbourn.shp"
+    building_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/kilbourntoClybourn.shp"
+    highway_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/highwayKilbourn.shp"  
     
-    highway_output = "windAroundBuildings/Tools/output/highwayKilbuorn.stl"
+    highway_output = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/highwayKilbuorn.stl"
     
     # =============================================================================
     # OFFSET CONFIGURATION - Choose one of the following methods:

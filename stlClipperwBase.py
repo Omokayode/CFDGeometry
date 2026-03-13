@@ -426,8 +426,8 @@ def main():
     # Clipping bounds: [xmin, ymin, zmin, xmax, ymax, zmax]
     # CLIP_BOUNDS = [-352.90, -302.33, 600, 350.99, 306.98, 670.98]
 
-    INPUT_FILE = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/output/terrainSimplification/terrain_Marquette_conservative_fixed.stl"
-    OUTPUT_FILE = "/Users/omokayj/Library/CloudStorage/OneDrive-MarquetteUniversity/Research/Research - Fall 25/3dprint/terrain_Marquette_conservative_fixed_clipped_base.stl"
+    INPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainSimplification/terrain_Marquette_conservative_fixed.stl"
+    OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrain_Marquette_conservative_fixed_clipped_base.stl"
 
     CLIP_BOUNDS = [-500, -500, 300, 500, 500, 720]
     # Boundary wall options
