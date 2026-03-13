@@ -605,10 +605,10 @@ def shapefile_highways_to_stl_with_elevation(shapefile_path, tif_path, output_pa
 if __name__ == "__main__":
     
     # Define paths
-    highway_shp = "windAroundBuildings/Tools/input/highwayKilbourn.shp"
-    # elevation_tif = "windAroundBuildings/Tools/input/rasterKilbourn.tif" 
-    elevation_tif = "windAroundBuildings/Tools/input/demdataforground/demdataforground.tif"
-    highway_output = "windAroundBuildings/Tools/output/wRaster/highwayKilbourn.stl"
+    highway_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/highwayKilbourn.shp"
+    # elevation_tif = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/rasterKilbourn.tif" 
+    elevation_tif = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/demdataforground/demdataforground.tif"
+    highway_output = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/wRaster/highwayKilbourn.stl"
     
     # Offset values (use your hardcoded values or calculate from other shapefiles)
     HARDCODED_OFFSET = (424265.04, 4765565.05)  

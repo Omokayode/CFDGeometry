@@ -553,9 +553,9 @@ if __name__ == "__main__":
     # Example usage matching the highway code pattern
     
     # Define paths
-    # input_file = "windAroundBuildings/Tools/input/demdataforground/demdataforground.tif"  
-    input_file ="/Users/omokayj/vsCode.local/urbanWindFlow/Tools/input/terrainwithclearance/terrainwithclearance.tif"
-    output_file = "/Users/omokayj/vsCode.local/urbanWindFlow/Tools/output/terrainMarquette.stl"  
+    # input_file = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/demdataforground/demdataforground.tif"  
+    input_file ="/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/terrainwithclearance/terrainwithclearance.tif"
+    output_file = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainMarquette.stl"  
 
     # Offset values (use your hardcoded values to match highway alignment)
     HARDCODED_OFFSET = (424265.04, 4765565.05)  

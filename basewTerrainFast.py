@@ -526,8 +526,8 @@ def main():
     BASE_EXTENTS = [-500, -500, 580, 500, 500, 720]
     
     # Output settings
-    # OUTPUT_FILE = "output/basewTerrainFastClipped091925.stl"
-    OUTPUT_FILE = "/Users/omokayj/Library/CloudStorage/OneDrive-MarquetteUniversity/Research/Research - Fall 25/3dprint/terrain_Marquette_conservative_fixed_clipped_base2.stl"
+    # OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/basewTerrainFastClipped091925.stl"
+    OUTPUT_FILE = "/home/omokayj/marquetteDrive/Research/fall25Research/3dprint/terrain_Marquette_conservative_fixed_clipped_base2.stl"
     OUTPUT_ASCII = True
     
     # =============================================================================

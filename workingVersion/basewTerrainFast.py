@@ -492,7 +492,7 @@ def main():
     USE_TERRAIN_FITTED_BASE = True          # Set to True to create terrain-fitted base
     
     # Terrain STL file (your terrain mesh)
-    TERRAIN_STL_FILE = "windAroundBuildings/Tools/output/terrainKilbourn_clipped.stl"   # Path to your terrain STL file
+    TERRAIN_STL_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainKilbourn_clipped.stl"   # Path to your terrain STL file
     
     # Your terrain data bounds (from your output)
     TERRAIN_BOUNDS = {
@@ -516,7 +516,7 @@ def main():
     BASE_EXTENTS = [-400, -350, 560, 400, 350, 580]
     
     # Output settings
-    OUTPUT_FILE = "windAroundBuildings/Tools/output/wRaster/basewTerrainFast.stl"
+    OUTPUT_FILE = "/mnt/nas/vsCode/resources//Tools/output/wRaster/basewTerrainFast.stl"
     OUTPUT_ASCII = False
     
     # =============================================================================

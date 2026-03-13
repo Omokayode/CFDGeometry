@@ -661,8 +661,8 @@ def main():
   
   
     # File paths
-    INPUT_FILE = "output/terrainKilbourn.stl"
-    OUTPUT_FILE = "output/basewTerrainClippedPrint.stl"
+    INPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/terrainKilbourn.stl"
+    OUTPUT_FILE = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/basewTerrainClippedPrint.stl"
     
     # Clipping bounds: [xmin, ymin, zmin, xmax, ymax, zmax]
     CLIP_BOUNDS = [-452.90, -402.33, 600, 550.99, 406.98, 670.98]

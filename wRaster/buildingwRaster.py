@@ -643,10 +643,10 @@ def extrude_buildings_with_elevation(shapefile, tif_path, output_stl, height_col
 if __name__ == "__main__":
     
     # Example with buildings using elevation raster
-    building_shp = "windAroundBuildings/Tools/input/kilbourntoClybourn.shp"
-    # elevation_tif = "windAroundBuildings/Tools/input/rasterKilbourn.tif" 
-    elevation_tif = "windAroundBuildings/Tools/input/demdataforground/demdataforground.tif"
-    building_output = "windAroundBuildings/Tools/output/wRaster/buildingsKilbourn.stl"
+    building_shp = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/kilbourntoClybourn.shp"
+    # elevation_tif = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/rasterKilbourn.tif" 
+    elevation_tif = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/demdataforground/demdataforground.tif"
+    building_output = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/wRaster/buildingsKilbourn.stl"
     
     # Offset values (use your hardcoded values or calculate from other shapefiles)
     HARDCODED_OFFSET = (424265.04, 4765565.05)  

@@ -456,15 +456,15 @@ def process_multiple_shapefiles_with_combined_offset(shapefile_list, output_dir,
 if __name__ == "__main__":
     
     # Example 1: Single shapefile with combined offset calculation
-    # shapefile = "windAroundBuildings/Tools/input/kilbourntoClybourn.shp"
-    # output_stl = "windAroundBuildings/Tools/output/buildingsKilbourn.stl"
+    # shapefile = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/kilbourntoClybourn.shp"
+    # output_stl = "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/buildingsKilbourn.stl"
     shapefile = "/home/omokayj/marquetteDrive/Research/s26Research/shp/okcity.shp"
     output_stl = "/home/omokayj/marquetteDrive/Research/s26Research/shp/okcity_python.stl"
     
     # List of all shapefiles for combined offset (even if processing one at a time)
     all_shapefiles = [
-        # "windAroundBuildings/Tools/input/kilbourntoClybourn.shp",
-        # "windAroundBuildings/Tools/input/treesshapefileKilbourn.shp"
+        # "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/kilbourntoClybourn.shp",
+        # "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/treesshapefileKilbourn.shp"
         "/home/omokayj/marquetteDrive/Research/s26Research/shp/okcity.shp"
         # Add other shapefile paths here for combined offset calculation
     ]
@@ -485,14 +485,14 @@ if __name__ == "__main__":
     # Example 2: Process multiple shapefiles with shared combined offset
     """
     shapefile_list = [
-        "windAroundBuildings/Tools/input/shapefile1.shp",
-        "windAroundBuildings/Tools/input/shapefile2.shp",
-        "windAroundBuildings/Tools/input/shapefile3.shp"
+        "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/shapefile1.shp",
+        "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/shapefile2.shp",
+        "/mnt/nas/vsCode/resources/urbanWindFlow/Tools/input/shapefile3.shp"
     ]
     
     process_multiple_shapefiles_with_combined_offset(
         shapefile_list=shapefile_list,
-        output_dir="windAroundBuildings/Tools/output/",
+        output_dir="/mnt/nas/vsCode/resources/urbanWindFlow/Tools/output/",
         target_crs='EPSG:32616',
         default_height=12.0,
         ground_level=0.0,
