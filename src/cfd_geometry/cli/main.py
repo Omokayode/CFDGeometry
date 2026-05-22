@@ -180,6 +180,10 @@ def _cmd_domain(args: argparse.Namespace) -> int:
     if args.bbox:
         bbox = bbox_from_sequence(tuple(args.bbox))
 
+    dem_bbox = None
+    if args.dem_bbox:
+        dem_bbox = bbox_from_sequence(tuple(args.dem_bbox))
+
     layers = ["buildings"]
     if not args.no_trees:
         layers.append("trees")
