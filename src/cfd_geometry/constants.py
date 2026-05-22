@@ -9,3 +9,6 @@ DEFAULT_PLACE_BUFFER_M = 250.0
 # Max raster dimension when loading/reprojecting DEMs (avoids TiB allocations)
 DEFAULT_DEM_MAX_RESOLUTION = 800
 MAX_DEM_PIXELS = 25_000_000
+
+# DEM download: buffer around footprint or geocoded point → ~2 km × 2 km default
+DEFAULT_DEM_BUFFER_M = 1000.0

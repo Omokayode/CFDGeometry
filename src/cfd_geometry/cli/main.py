@@ -205,6 +205,8 @@ def _cmd_domain(args: argparse.Namespace) -> int:
         auto_utm=args.auto_utm,
         target_crs=None if args.auto_utm else f"EPSG:{args.epsg}",
         dem_max_resolution=args.dem_max_res,
+        dem_buffer_m=args.dem_buffer_m,
+        dem_bbox=dem_bbox,
     )
     build_domain(config)
     return 0
@@ -437,6 +439,19 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=800,
         help="Max DEM raster dimension for terrain STL (default: 800)",
+    )
+    p_dom.add_argument(
+        "--dem-buffer-m",
+        type=float,
+        default=1000.0,
+        help="DEM download padding on all sides in meters (~2 km x 2 km at 1000; default: 1000)",
+    )
+    p_dom.add_argument(
+        "--dem-bbox",
+        nargs=4,
+        type=float,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="Explicit WGS84 DEM bounds (overrides --dem-buffer-m)",
     )
     p_dom.set_defaults(func=_cmd_domain)
 
