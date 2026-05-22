@@ -76,6 +76,60 @@ def _cmd_trees(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_buildings_dem(args: argparse.Namespace) -> int:
+    from cfd_geometry.buildings.extrude_dem import extrude_buildings_to_stl_with_dem
+    from cfd_geometry.geo.offsets import get_combined_offset
+
+    offset = None
+    align = args.align_with or [args.shapefile]
+    if align:
+        offset = get_combined_offset(align, args.epsg)
+
+    extrude_buildings_to_stl_with_dem(
+        args.shapefile,
+        args.dem,
+        args.output,
+        estimate_heights=not args.no_estimate_heights,
+        combined_offset=offset,
+        shapefile_list=align,
+        elevation_offset=args.elevation_offset,
+        target_crs=f"EPSG:{args.epsg}",
+    )
+    return 0
+
+
+def _cmd_trees_dem(args: argparse.Namespace) -> int:
+    from cfd_geometry.trees.extrude_dem import extrude_trees_to_stl_with_dem
+
+    extrude_trees_to_stl_with_dem(
+        args.shapefile,
+        args.dem,
+        args.output,
+        alignment_shapefiles=args.align_with,
+        default_height=args.default_height,
+        target_crs=f"EPSG:{args.epsg}",
+    )
+    return 0
+
+
+def _cmd_highways(args: argparse.Namespace) -> int:
+    from cfd_geometry.geo.offsets import get_combined_offset
+    from cfd_geometry.highways.extrude import extrude_highways_to_stl
+
+    offset = get_combined_offset(args.align_with or [args.shapefile], args.epsg)
+    extrude_highways_to_stl(
+        args.shapefile,
+        args.output,
+        offset_x=offset[0],
+        offset_y=offset[1],
+        alignment_shapefiles=args.align_with,
+        highway_type_column=args.type_column,
+        reference_shapefiles=args.clip_to,
+        target_crs=f"EPSG:{args.epsg}",
+    )
+    return 0
+
+
 def _cmd_clip(args: argparse.Namespace) -> int:
     from cfd_geometry.clipper.clipper import clip_stl_to_bounds
 
@@ -135,6 +189,31 @@ def main(argv: list[str] | None = None) -> int:
     p_tr.add_argument("--align-with", nargs="+")
     p_tr.add_argument("--default-height", type=float, default=10.0)
     p_tr.set_defaults(func=_cmd_trees)
+
+    p_bd = sub.add_parser("buildings-dem", help="Extrude buildings onto a DEM surface")
+    p_bd.add_argument("shapefile")
+    p_bd.add_argument("dem", help="Elevation GeoTIFF")
+    p_bd.add_argument("-o", "--output", required=True)
+    p_bd.add_argument("--align-with", nargs="+")
+    p_bd.add_argument("--elevation-offset", type=float, default=0.0)
+    p_bd.add_argument("--no-estimate-heights", action="store_true")
+    p_bd.set_defaults(func=_cmd_buildings_dem)
+
+    p_td = sub.add_parser("trees-dem", help="Place trees on a DEM surface")
+    p_td.add_argument("shapefile")
+    p_td.add_argument("dem")
+    p_td.add_argument("-o", "--output", required=True)
+    p_td.add_argument("--align-with", nargs="+")
+    p_td.add_argument("--default-height", type=float, default=10.0)
+    p_td.set_defaults(func=_cmd_trees_dem)
+
+    p_hw = sub.add_parser("highways", help="Extrude highway linework to STL")
+    p_hw.add_argument("shapefile")
+    p_hw.add_argument("-o", "--output", required=True)
+    p_hw.add_argument("--align-with", nargs="+")
+    p_hw.add_argument("--clip-to", nargs="+", help="Reference shapefiles for spatial clip")
+    p_hw.add_argument("--type-column", default=None)
+    p_hw.set_defaults(func=_cmd_highways)
 
     p_c = sub.add_parser("clip", help="Clip STL to a bounding box")
     p_c.add_argument("input")
