@@ -145,8 +145,34 @@ def plot_stl_files(
         margin=dict(l=0, r=0, t=40, b=0),
     )
     if show:
-        fig.show()
+        _show_figure(fig)
     return fig
+
+
+def _show_figure(fig: Any) -> None:
+    """Display in Jupyter/VS Code without requiring nbformat (HTML fallback)."""
+    try:
+        from IPython import get_ipython
+        from IPython.display import HTML, display
+
+        if get_ipython() is not None:
+            display(HTML(fig.to_html(include_plotlyjs="cdn")))
+            return
+    except Exception:
+        pass
+    try:
+        import plotly.io as pio
+
+        for renderer in ("vscode", "notebook_connected", "browser"):
+            if renderer in pio.renderers:
+                try:
+                    fig.show(renderer=renderer)
+                    return
+                except Exception:
+                    continue
+    except Exception:
+        pass
+    fig.show()
 
 
 def plot_domain_stls(

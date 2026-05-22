@@ -107,9 +107,9 @@ cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 
 | Launch | Link |
 |--------|------|
 | **Google Colab** | [colab_quickstart.ipynb](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) |
-| **VS Code / Cursor** | Clone repo → `pip install -e ".[notebook,download]"` → open `notebooks/colab_quickstart.ipynb` |
+| **VS Code** | Clone repo → `pip install -e ".[notebook,download]"` → open `notebooks/colab_quickstart.ipynb` |
 
-The quick-start notebook installs the package, lets you **draw the study extent** on a map, downloads OSM data, and writes sample `buildings.stl` / `trees.stl`. In Colab, the first cell installs widget deps **without upgrading ipython** (Colab pins `ipython==7.34`); `moviepy`/`decorator` resolver warnings are usually safe to ignore.
+The quick-start notebook installs the package, lets you **draw the study extent** on a map, downloads OSM data, and writes sample `buildings.stl` / `trees.stl`. In Colab, STEP 1 installs with **`--no-deps`** so Colab’s numpy/scipy are not upgraded (avoids `_blas_supports_fpe` errors). `moviepy`/`decorator` warnings are usually harmless. Plotly preview uses HTML output (no `nbformat` required).
 
 Minimal extent-only flow:
 

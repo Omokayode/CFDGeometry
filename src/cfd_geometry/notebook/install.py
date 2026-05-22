@@ -73,16 +73,26 @@ def install_for_notebook(*, repo_root: Path | None = None) -> None:
     src_pkg = root / "src" / "cfd_geometry"
 
     if in_colab():
-        _run_pip(
-            *_COLAB_WIDGET_DEPS,
-            "--upgrade-strategy",
-            "only-if-needed",
-        )
+        strategy = ("--upgrade-strategy", "only-if-needed")
+        _run_pip(*_COLAB_WIDGET_DEPS, *strategy)
+        # --no-deps: avoid upgrading Colab's numpy/scipy (breaks osmnx / geopandas).
         _run_pip(
             "--upgrade",
-            "--force-reinstall",
             "--no-cache-dir",
-            f"{_GIT_ORIGIN}#egg=cfd-geometry[download]",
+            "--no-deps",
+            f"{_GIT_ORIGIN}#egg=cfd-geometry",
+        )
+        _run_pip("osmnx>=1.9", "requests>=2.28", *strategy)
+        _run_pip(
+            "geopandas>=0.14",
+            "rasterio>=1.3",
+            "trimesh>=4.0",
+            "mapbox-earcut>=1.0",
+            "scipy>=1.11",
+            "shapely>=2.0",
+            "pyproj>=3.6",
+            "pandas>=2.0",
+            *strategy,
         )
         return
 

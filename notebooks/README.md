@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Google Colab** | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) |
-| **VS Code / Cursor** | Clone the repo, open `notebooks/colab_quickstart.ipynb`, `.venv` kernel |
+| **VS Code** | Clone the repo, open `notebooks/colab_quickstart.ipynb`, `.venv` kernel |
 
 ### Colab: wrong notebook?
 
@@ -13,7 +13,7 @@ If the **second cell is a map** (not `STEP 1 — Install`), you are **not** on t
 
 1. Do **not** open a copy from **Google Drive**.
 2. Use the Colab link above (file: `colab_quickstart.ipynb`).
-3. Check the title cell shows **NOTEBOOK_ID: `cfd-colab-v4-vscode-root`**.
+3. Check the title cell shows **NOTEBOOK_ID: `cfd-colab-v5-stable-deps`**.
 
 ### VS Code: `No module named 'cfd_geometry.domain'`
 

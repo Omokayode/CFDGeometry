@@ -39,6 +39,8 @@ notebook = [
     "ipyleaflet>=0.17",
     "jupyterlab_widgets>=1.0.5,<4",
     "plotly>=5.18",
+    "nbformat>=4.2.0",
+    "ipykernel>=6.0",
 ]
 gui = []
 
