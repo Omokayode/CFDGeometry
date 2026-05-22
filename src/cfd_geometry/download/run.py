@@ -54,9 +54,28 @@ def download_domain(config: DownloadConfig) -> DownloadResult:
             result.files["highways"] = path
 
     if config.download_dem or "dem" in config.layers:
+        from cfd_geometry.buildings.extents import dem_download_bbox_around_buildings
+        from cfd_geometry.download.osm import resolve_bbox
+
+        if config.dem_bbox is not None:
+            dem_bbox = config.dem_bbox
+            print("DEM extent: user-specified bbox")
+        elif "buildings" in result.files:
+            dem_bbox = dem_download_bbox_around_buildings(
+                result.files["buildings"],
+                buffer_m=config.dem_buffer_m,
+                fallback_bbox=bbox,
+            )
+        else:
+            dem_bbox = resolve_bbox(
+                place=config.place,
+                bbox=config.bbox,
+                timeout=config.network_timeout,
+                place_buffer_m=config.dem_buffer_m,
+            )
         dem_path = config.output_dir / config.dem_filename
         download_dem_opentopography(
-            bbox,
+            dem_bbox,
             dem_path,
             demtype=config.opentopography_demtype,
         )

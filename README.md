@@ -32,9 +32,13 @@ cfd-geometry domain -o data --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA"
 
 Default download extent for streets/points is about **500 m × 500 m** (`--buffer-m 250`). Widen with `--buffer-m 500` if needed.
 
+Use **`--study-buffer-m`** to set the same padding for both OSM and DEM (e.g. `--study-buffer-m 300`). Otherwise OSM uses `--buffer-m` (default 250) and DEM uses `--dem-buffer-m` (default 200).
+
 Options: `--no-trees`, `--highways`, `--dem`, `--terrain`, `--no-download` (use existing `data/input/`).
 
-With `--dem`: also writes `buildings_on_dem.stl` and `trees_on_dem.stl` (bases on terrain). DEM extent defaults to **200 m padding** around buildings (`--dem-buffer-m`). Override with `--dem-buffer-m` or `--dem-bbox WEST SOUTH EAST NORTH`.
+With `--dem`: also writes `buildings_on_dem.stl`, `trees_on_dem.stl`, and (with `--highways`) `highways_on_dem.stl`. DEM extent defaults to **200 m padding** around buildings. Override with `--dem-buffer-m` or `--dem-bbox WEST SOUTH EAST NORTH`.
+
+After a domain build, see `output/domain_summary.json` for offsets, CRS, and file paths.
 
 Use DEM-aligned STLs with `terrain.stl` in ParaView/OpenFOAM; flat `buildings.stl` / `trees.stl` stay at z=0 for simple setups.
 
