@@ -36,3 +36,15 @@ def verify_stl_finite_vertices(stl_path: str | Path, *, label: str = "STL") -> N
             "coordinates (NaN/inf). Rebuild DEM/terrain or check inputs."
         )
     print(f"  Verified {label}: all vertices finite ({stl_path})")
+
+
+def validate_domain_stls(stl_files: dict[str, Path]) -> None:
+    """Run file-size and finite-vertex checks on all domain STL outputs."""
+    from cfd_geometry.mesh.stl_io import validate_stl
+
+    if not stl_files:
+        return
+    print("Validating STL outputs:")
+    for name, path in stl_files.items():
+        validate_stl(str(path))
+        verify_stl_finite_vertices(path, label=name)
