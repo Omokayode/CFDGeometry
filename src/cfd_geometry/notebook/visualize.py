@@ -107,7 +107,7 @@ def plot_stl_files(
     max_triangles
         Per-layer triangle cap for notebook performance.
     show
-        If True, call ``fig.show()`` (works in Colab and VS Code).
+        If True, embed Plotly HTML in the notebook (no ``nbformat`` required).
     """
     go = _require_plotly()
     traces = []
@@ -150,29 +150,35 @@ def plot_stl_files(
 
 
 def _show_figure(fig: Any) -> None:
-    """Display in Jupyter/VS Code without requiring nbformat (HTML fallback)."""
+    """Embed Plotly in the notebook via HTML (avoids nbformat / fig.show() mime path)."""
+    out = Path("data/output/stl_preview.html")
+    out.parent.mkdir(parents=True, exist_ok=True)
+
     try:
-        from IPython import get_ipython
         from IPython.display import HTML, display
 
-        if get_ipython() is not None:
-            display(HTML(fig.to_html(include_plotlyjs="cdn")))
-            return
-    except Exception:
+        for inline_js in (True, "cdn"):
+            try:
+                display(HTML(fig.to_html(include_plotlyjs=inline_js)))
+                return
+            except Exception:
+                continue
+    except ImportError:
         pass
-    try:
-        import plotly.io as pio
 
-        for renderer in ("vscode", "notebook_connected", "browser"):
-            if renderer in pio.renderers:
-                try:
-                    fig.show(renderer=renderer)
-                    return
-                except Exception:
-                    continue
-    except Exception:
+    fig.write_html(str(out), include_plotlyjs="cdn")
+    try:
+        from IPython.display import HTML, display
+
+        display(HTML(out.read_text(encoding="utf-8")))
+        return
+    except ImportError:
         pass
-    fig.show()
+
+    raise RuntimeError(
+        f"Plotly preview written to {out.resolve()} — open in a browser. "
+        "For inline display: pip install -e '.[notebook]' and restart the kernel."
+    )
 
 
 def plot_domain_stls(
