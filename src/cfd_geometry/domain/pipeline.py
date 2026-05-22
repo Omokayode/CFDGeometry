@@ -1,0 +1,197 @@
+"""Orchestrate download + STL extrusion for a CFD study domain."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from cfd_geometry.domain.config import DomainConfig, DomainResult
+from cfd_geometry.download.config import DownloadConfig
+from cfd_geometry.download.run import download_domain
+from cfd_geometry.geo.offsets import get_combined_offset, target_epsg_for_shapefiles
+from cfd_geometry.geo.paths import filter_vector_inputs
+
+
+def _existing_vector_inputs(config: DomainConfig) -> dict[str, Path]:
+    """Map layer name to shapefile if it already exists on disk."""
+    candidates = {
+        "buildings": config.buildings_shp,
+        "trees": config.trees_shp,
+        "highways": config.highways_shp,
+    }
+    return {k: p for k, p in candidates.items() if p.exists()}
+
+
+def _alignment_shapefiles(inputs: dict[str, Path], config: DomainConfig) -> list[str]:
+    """Shapefiles used to compute a shared origin (buildings + trees by default)."""
+    paths: list[Path] = []
+    if "buildings" in inputs and config.build_buildings:
+        paths.append(inputs["buildings"])
+    if "trees" in inputs and config.build_trees:
+        paths.append(inputs["trees"])
+    if not paths:
+        paths = list(inputs.values())
+    return [str(p) for p in paths]
+
+
+def build_domain(config: DomainConfig) -> DomainResult:
+    """
+    Download OSM inputs (optional) and extrude aligned STL layers.
+
+    Writes under ``config.output_dir/input`` and ``config.output_dir/output``.
+    """
+    config.input_dir.mkdir(parents=True, exist_ok=True)
+    config.stl_dir.mkdir(parents=True, exist_ok=True)
+
+    result = DomainResult(config=config)
+    inputs: dict[str, Path] = {}
+
+    if config.run_download:
+        print("=" * 70)
+        print("DOWNLOAD")
+        print("=" * 70)
+        dl_config = DownloadConfig(
+            output_dir=config.input_dir,
+            place=config.place,
+            bbox=config.bbox,
+            layers=config.download_layers,
+            download_dem=config.download_dem,
+            place_buffer_m=config.place_buffer_m,
+            network_timeout=config.network_timeout,
+        )
+        dl_result = download_domain(dl_config)
+        result.bbox = dl_result.bbox
+        inputs.update(dl_result.files)
+    else:
+        inputs = _existing_vector_inputs(config)
+        if not inputs:
+            raise FileNotFoundError(
+                f"No shapefiles in {config.input_dir}. Run with download enabled "
+                "or place buildings.shp / trees.shp there."
+            )
+        print(f"Using existing inputs in {config.input_dir}")
+
+    result.input_files = dict(inputs)
+
+    align_paths = filter_vector_inputs(
+        _alignment_shapefiles(inputs, config),
+        label="domain alignment",
+    )
+    if not align_paths:
+        raise RuntimeError("No vector layers available for alignment offset")
+
+    target_epsg = target_epsg_for_shapefiles(
+        align_paths,
+        target_epsg=int(config.target_crs.split(":")[1])
+        if config.target_crs
+        else 32616,
+        auto_utm=config.auto_utm,
+    )
+    result.target_crs = f"EPSG:{target_epsg}"
+    offset = get_combined_offset(align_paths, target_epsg)
+    result.offset = offset
+
+    resolved_crs = None if config.auto_utm else config.target_crs
+
+    print("\n" + "=" * 70)
+    print("EXTRUDE STL")
+    print("=" * 70)
+    print(f"Target CRS: {result.target_crs}")
+    print(f"Combined offset: ({offset[0]:.2f}, {offset[1]:.2f})")
+
+    if config.build_buildings and "buildings" in inputs:
+        from cfd_geometry.buildings.extrude import extrude_buildings_to_stl
+
+        out = config.stl_dir / "buildings.stl"
+        stats = extrude_buildings_to_stl(
+            inputs["buildings"],
+            out,
+            height_source=config.height_source,
+            default_height=config.default_height,
+            combined_offset=offset,
+            shapefile_list=align_paths,
+            target_crs=resolved_crs,
+            auto_utm=config.auto_utm,
+            ground_buffer=config.ground_buffer,
+            blockmesh_output=config.stl_dir / "blockMeshDict_vertices.txt",
+        )
+        result.stl_files["buildings"] = out
+        result.extrude_stats["buildings"] = stats
+
+    if config.build_trees and "trees" in inputs:
+        from cfd_geometry.trees.extrude import extrude_trees_to_stl
+
+        out = config.stl_dir / "trees.stl"
+        stats = extrude_trees_to_stl(
+            str(inputs["trees"]),
+            str(out),
+            combined_offset=offset,
+            alignment_shapefiles=align_paths,
+            default_height=config.tree_default_height,
+            target_crs=result.target_crs,
+        )
+        result.stl_files["trees"] = out
+        result.extrude_stats["trees"] = stats
+
+    if config.build_highways and "highways" in inputs:
+        from cfd_geometry.highways.extrude import extrude_highways_to_stl
+
+        out = config.stl_dir / "highways.stl"
+        stats = extrude_highways_to_stl(
+            str(inputs["highways"]),
+            str(out),
+            offset_x=offset[0],
+            offset_y=offset[1],
+            alignment_shapefiles=align_paths,
+            reference_shapefiles=align_paths,
+            target_crs=result.target_crs,
+        )
+        result.stl_files["highways"] = out
+        result.extrude_stats["highways"] = stats
+
+    dem_path = inputs.get("dem") or (config.dem_tif if config.dem_tif.exists() else None)
+    if config.build_terrain:
+        if not dem_path:
+            print("Warning: --terrain requested but no dem.tif; skipping terrain STL")
+        else:
+            from cfd_geometry.terrain.dem_to_stl import dem_to_stl_with_offset
+
+            out = config.stl_dir / "terrain.stl"
+            dem_to_stl_with_offset(
+                str(dem_path),
+                str(out),
+                offset[0],
+                offset[1],
+                target_crs=result.target_crs,
+            )
+            result.stl_files["terrain"] = out
+            result.extrude_stats["terrain"] = {"output": str(out)}
+
+    if config.build_buildings and "buildings" in inputs and dem_path:
+        from cfd_geometry.buildings.extrude_dem import (
+            extrude_buildings_to_stl_with_dem,
+        )
+
+        out = config.stl_dir / "buildings_on_dem.stl"
+        stats = extrude_buildings_to_stl_with_dem(
+            inputs["buildings"],
+            dem_path,
+            out,
+            height_source=config.height_source,
+            default_height=config.default_height,
+            combined_offset=offset,
+            shapefile_list=align_paths,
+            target_crs=resolved_crs,
+            auto_utm=config.auto_utm,
+        )
+        result.stl_files["buildings_on_dem"] = out
+        result.extrude_stats["buildings_on_dem"] = stats
+
+    print("\n" + "=" * 70)
+    print("DOMAIN BUILD COMPLETE")
+    print("=" * 70)
+    for name, path in result.stl_files.items():
+        print(f"  {name}: {path}")
+    if (config.stl_dir / "blockMeshDict_vertices.txt").exists():
+        print(f"  blockMesh: {config.stl_dir / 'blockMeshDict_vertices.txt'}")
+
+    return result

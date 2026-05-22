@@ -20,7 +20,21 @@ Without installing, run modules with `PYTHONPATH=src python3 -m cfd_geometry.cli
 
 ## Quick start (CLI)
 
-### Auto-download inputs (optional)
+### Full domain pipeline (download + STL)
+
+One command: fetch OSM data under `data/input/`, extrude aligned STLs to `data/output/`:
+
+```bash
+pip install -e ".[download]"
+
+cfd-geometry domain -o data --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA"
+```
+
+Default download extent for streets/points is about **500 m × 500 m** (`--buffer-m 250`). Widen with `--buffer-m 500` if needed.
+
+Options: `--no-trees`, `--highways`, `--dem`, `--terrain`, `--no-download` (use existing `data/input/`).
+
+### Auto-download inputs only (optional)
 
 Fetch OpenStreetMap buildings, trees, and roads for a place or bounding box:
 
@@ -30,8 +44,8 @@ pip install -e ".[download]"
 # By place name (geocoded; cities use admin boundaries)
 cfd-geometry download -o data/input --place "Milwaukee, Wisconsin, USA"
 
-# Streets/points get a buffer (default 2 km); widen with --buffer-m
-cfd-geometry download -o data/input --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA" --buffer-m 3000
+# Streets/points: ~500 m x 500 m box by default (--buffer-m 250)
+cfd-geometry download -o data/input --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA"
 
 # By WGS84 bbox: west south east north
 cfd-geometry download -o data/input --bbox -88.0 43.0 -87.5 43.5 --layers buildings trees
@@ -93,7 +107,8 @@ src/cfd_geometry/
 ├── mesh/         # STL I/O, polygon extrusion
 ├── raster/       # DEM loading and elevation sampling
 ├── buildings/    # OSM heights, trimesh extrusion (+ DEM-aware extrude_dem)
-├── download/     # OSM / optional DEM auto-download (VoxCity-style data sourcing)
+├── domain/       # build_domain() orchestrator (download + extrude)
+├── download/     # OSM / optional DEM auto-download
 ├── openfoam/     # blockMeshDict vertex snippets
 ├── trees/        # Point trees (+ DEM-aware extrude_dem)
 ├── highways/     # Road linework extrusion

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from cfd_geometry.constants import DEFAULT_PLACE_BUFFER_M
 from cfd_geometry.download.bbox import Bbox
 
 DEFAULT_LAYERS = ("buildings", "trees", "highways")
@@ -29,7 +30,7 @@ class DownloadConfig:
     highways_filename: str = "highways.shp"
     opentopography_demtype: str = "SRTMGL1"
     network_timeout: int = 180
-    place_buffer_m: float = 2000.0
+    place_buffer_m: float = DEFAULT_PLACE_BUFFER_M
 
     def __post_init__(self) -> None:
         self.output_dir = Path(self.output_dir)

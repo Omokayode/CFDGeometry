@@ -169,6 +169,45 @@ def _cmd_highways(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_domain(args: argparse.Namespace) -> int:
+    from cfd_geometry.constants import DEFAULT_PLACE_BUFFER_M
+    from cfd_geometry.domain.config import DomainConfig
+    from cfd_geometry.domain.pipeline import build_domain
+    from cfd_geometry.download.bbox import bbox_from_sequence
+
+    bbox = None
+    if args.bbox:
+        bbox = bbox_from_sequence(tuple(args.bbox))
+
+    layers = ["buildings"]
+    if not args.no_trees:
+        layers.append("trees")
+    if args.highways:
+        layers.append("highways")
+
+    config = DomainConfig(
+        output_dir=args.output_dir,
+        place=args.place,
+        bbox=bbox,
+        run_download=not args.no_download,
+        download_layers=tuple(layers),
+        download_dem=args.dem,
+        place_buffer_m=args.buffer_m or DEFAULT_PLACE_BUFFER_M,
+        network_timeout=args.timeout,
+        build_buildings=True,
+        build_trees="trees" in layers and not args.no_trees,
+        build_highways=args.highways,
+        build_terrain=args.terrain,
+        height_source=args.height_source,
+        default_height=args.default_height,
+        ground_buffer=None if args.no_ground_buffer else args.ground_buffer,
+        auto_utm=args.auto_utm,
+        target_crs=None if args.auto_utm else f"EPSG:{args.epsg}",
+    )
+    build_domain(config)
+    return 0
+
+
 def _cmd_download(args: argparse.Namespace) -> int:
     from cfd_geometry.download.bbox import bbox_from_sequence
     from cfd_geometry.download.config import DownloadConfig
@@ -318,6 +357,75 @@ def main(argv: list[str] | None = None) -> int:
     p_hw.add_argument("--type-column", default=None)
     p_hw.set_defaults(func=_cmd_highways)
 
+    p_dom = sub.add_parser(
+        "domain",
+        help="Download OSM inputs and extrude aligned STLs (full pipeline)",
+    )
+    p_dom.add_argument(
+        "-o",
+        "--output-dir",
+        required=True,
+        help="Project folder (creates input/ and output/ subdirs)",
+    )
+    dom_place = p_dom.add_mutually_exclusive_group(required=True)
+    dom_place.add_argument("--place", help="Geocoded area or street name")
+    dom_place.add_argument(
+        "--bbox",
+        nargs=4,
+        type=float,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+    )
+    p_dom.add_argument(
+        "--no-download",
+        action="store_true",
+        help="Skip OSM download; use existing files in output-dir/input/",
+    )
+    p_dom.add_argument(
+        "--no-trees",
+        action="store_true",
+        help="Skip tree download and trees.stl",
+    )
+    p_dom.add_argument(
+        "--highways",
+        action="store_true",
+        help="Include highway linework download and highways.stl",
+    )
+    p_dom.add_argument(
+        "--dem",
+        action="store_true",
+        help="Download DEM (OpenTopography API key) and buildings_on_dem.stl",
+    )
+    p_dom.add_argument(
+        "--terrain",
+        action="store_true",
+        help="Build terrain.stl from dem.tif (requires --dem or existing dem.tif)",
+    )
+    p_dom.add_argument(
+        "--buffer-m",
+        type=float,
+        default=None,
+        help="Buffer for street/point geocoding in meters (~500x500 m at 250, default)",
+    )
+    p_dom.add_argument("--timeout", type=int, default=180)
+    p_dom.add_argument(
+        "--height-source",
+        choices=["osm", "area", "column", "none"],
+        default="osm",
+    )
+    p_dom.add_argument("--default-height", type=float, default=9.0)
+    p_dom.add_argument(
+        "--ground-buffer",
+        type=float,
+        default=500.0,
+        help="OpenFOAM domain padding and blockMesh snippet (default: 500 m)",
+    )
+    p_dom.add_argument(
+        "--no-ground-buffer",
+        action="store_true",
+        help="Disable ground buffer / blockMeshDict export",
+    )
+    p_dom.set_defaults(func=_cmd_domain)
+
     p_dl = sub.add_parser(
         "download",
         help="Download OSM buildings/trees/highways (optional DEM) for a place or bbox",
@@ -361,8 +469,8 @@ def main(argv: list[str] | None = None) -> int:
     p_dl.add_argument(
         "--buffer-m",
         type=float,
-        default=2000.0,
-        help="When --place is a street/point (not a city polygon), buffer radius in meters (default: 2000)",
+        default=250.0,
+        help="Street/point buffer in meters (~500 m x 500 m box at 250; default: 250)",
     )
     p_dl.set_defaults(func=_cmd_download)
 
