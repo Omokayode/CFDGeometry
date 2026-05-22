@@ -37,6 +37,21 @@ def _alignment_shapefiles(inputs: dict[str, Path], config: DomainConfig) -> list
     return [str(p) for p in paths]
 
 
+def _resolve_canopy_raster(config: DomainConfig) -> str | None:
+    """Resolve optional canopy height GeoTIFF (user-supplied, not auto-downloaded)."""
+    if not config.canopy_raster:
+        return None
+    path = Path(config.canopy_raster)
+    if not path.is_absolute():
+        local = config.input_dir / path
+        if local.exists():
+            return str(local)
+    if path.exists():
+        return str(path)
+    print(f"Warning: canopy raster not found: {path}")
+    return None
+
+
 def _resolve_dem_bbox(
     config: DomainConfig,
     inputs: dict[str, Path],
@@ -170,6 +185,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
     if config.build_trees and "trees" in inputs:
         from cfd_geometry.trees.extrude import extrude_trees_to_stl
 
+        canopy_path = _resolve_canopy_raster(config)
         out = config.stl_dir / "trees.stl"
         stats = extrude_trees_to_stl(
             str(inputs["trees"]),
@@ -177,6 +193,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
             combined_offset=offset,
             alignment_shapefiles=align_paths,
             default_height=config.tree_default_height,
+            canopy_raster=canopy_path,
             tree_model=config.tree_model,
             target_crs=result.target_crs,
         )
@@ -263,6 +280,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
             combined_offset=offset,
             alignment_shapefiles=align_paths,
             default_height=config.tree_default_height,
+            canopy_raster=_resolve_canopy_raster(config),
             target_crs=result.target_crs,
             z_reference=config.terrain_z_reference,
             z_offset=z_offset,

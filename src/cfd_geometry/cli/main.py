@@ -223,6 +223,7 @@ def _cmd_domain(args: argparse.Namespace) -> int:
         complement_raster=args.complement_raster,
         simplify_tolerance=args.simplify_tolerance,
         tree_model=args.tree_model,
+        canopy_raster=args.canopy_raster,
     )
     build_domain(config)
     return 0
@@ -497,6 +498,12 @@ def main(argv: list[str] | None = None) -> int:
         "--tree-model",
         choices=["canopy", "cylinder", "sphere", "skip"],
         default="canopy",
+    )
+    p_dom.add_argument(
+        "--canopy-raster",
+        default=None,
+        metavar="PATH",
+        help="Canopy height GeoTIFF (e.g. from VoxCity/ETH export); samples OSM tree points",
     )
     p_dom.add_argument(
         "--ground-buffer",

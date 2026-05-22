@@ -36,6 +36,8 @@ Use **`--study-buffer-m`** to set the same padding for both OSM and DEM (e.g. `-
 
 Options: `--no-trees`, `--highways`, `--dem`, `--terrain`, `--no-download` (use existing `data/input/`).
 
+Tree heights: OSM `height` tags when present, else sample a user-supplied canopy GeoTIFF (`--canopy-raster data/input/canopy_height.tif`), else 10 m default per tree. No automatic ETH download.
+
 With `--dem`: also writes `buildings_on_dem.stl`, `trees_on_dem.stl`, and (with `--highways`) `highways_on_dem.stl`. DEM extent defaults to **200 m padding** around buildings. Override with `--dem-buffer-m` or `--dem-bbox WEST SOUTH EAST NORTH`.
 
 After a domain build, see `output/domain_summary.json` for offsets, CRS, and file paths.

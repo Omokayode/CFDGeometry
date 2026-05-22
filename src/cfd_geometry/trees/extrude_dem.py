@@ -18,6 +18,7 @@ from cfd_geometry.raster.elevation import (
     resolve_dem_z_offset,
 )
 from cfd_geometry.trees.geometry import create_tree_canopy, default_tree_config
+from cfd_geometry.trees.heights import assign_tree_heights
 
 
 def extrude_trees_to_stl_with_dem(
@@ -74,7 +75,11 @@ def extrude_trees_to_stl_with_dem(
         ground_z = local_ground_z(world_x, world_y, elevation_data, z_offset)
         local_pt = Point(world_x - ox, world_y - oy)
 
-        height = default_height
+        try:
+            height = float(row["tree_height_m"])
+            height = max(cfg["min_tree_height"], min(cfg["max_tree_height"], height))
+        except (ValueError, TypeError, KeyError):
+            height = default_height
         trunk_h = height * cfg["trunk_height_ratio"]
         canopy_h = height - trunk_h
         canopy_r = height * cfg["canopy_radius_ratio"]

@@ -22,6 +22,9 @@ BUILDING_FIELDS: dict[str, list[str]] = {
 TREE_FIELDS: dict[str, list[str]] = {
     "natural": ["natural"],
     "name": ["name"],
+    "height": ["height", "tree:height"],
+    "circumf": ["circumference", "circum"],
+    "dcrown": ["diameter_crown", "diameter:crown", "crown_diameter"],
 }
 
 HIGHWAY_FIELDS: dict[str, list[str]] = {

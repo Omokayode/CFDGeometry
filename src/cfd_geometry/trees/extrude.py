@@ -11,6 +11,7 @@ from cfd_geometry.geo.offsets import get_combined_offset
 from cfd_geometry.mesh.normals import mesh_bounds
 from cfd_geometry.mesh.stl_io import write_stl_binary
 from cfd_geometry.trees.geometry import default_tree_config
+from cfd_geometry.trees.heights import assign_tree_heights
 
 import geopandas as gpd
 
@@ -22,6 +23,7 @@ def extrude_trees_to_stl(
     combined_offset: tuple[float, float] | None = None,
     alignment_shapefiles: list[str] | None = None,
     height_column: str | None = None,
+    canopy_raster: str | None = None,
     default_height: float = 5.0,
     tree_config: dict | None = None,
     tree_model: str = "canopy",
@@ -44,6 +46,14 @@ def extrude_trees_to_stl(
     if len(point_gdf) == 0:
         raise ValueError("No point geometries in shapefile")
 
+    point_gdf = assign_tree_heights(
+        point_gdf,
+        canopy_raster=canopy_raster,
+        default_height=default_height,
+        height_col=height_column,
+    )
+    active_height_col = "tree_height_m"
+
     if combined_offset is None and alignment_shapefiles:
         combined_offset = get_combined_offset(
             alignment_shapefiles, int(target_crs.split(":")[1])
@@ -62,16 +72,14 @@ def extrude_trees_to_stl(
             else Point(geom.x, geom.y)
         )
 
-        if height_column and height_column in row and row[height_column] is not None:
-            try:
-                height = float(row[height_column])
-                height = max(
-                    cfg["min_tree_height"],
-                    min(cfg["max_tree_height"], height),
-                )
-            except (ValueError, TypeError):
-                height = default_height
-        else:
+        raw = row[active_height_col] if active_height_col in row.index else default_height
+        try:
+            height = float(raw)
+            height = max(
+                cfg["min_tree_height"],
+                min(cfg["max_tree_height"], height),
+            )
+        except (ValueError, TypeError):
             height = default_height
 
         height_stats.append(height)
