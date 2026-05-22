@@ -4,7 +4,7 @@
 
 Python package for building **STL geometry** from GIS and elevation data, aimed at **urban wind / OpenFOAM** workflows.
 
-**Try it:** [Google Colab quick start](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) — use this GitHub link, not an old Drive copy. VS Code: `notebooks/colab_quickstart.ipynb`. See [notebooks/README.md](notebooks/README.md).
+**Try it:** [Colab tutorial](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) · VS Code: `notebooks/cfd_geometry_quickstart.ipynb`. See [notebooks/README.md](notebooks/README.md).
 
 ## Install
 
@@ -102,14 +102,14 @@ cfd-geometry terrain dem.tif -o terrain.stl --offset-x 424265.04 --offset-y 4765
 cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 500 720
 ```
 
-## Notebooks (Colab & VS Code)
+## Notebooks
 
-| Launch | Link |
-|--------|------|
+| Environment | Notebook |
+|-------------|----------|
 | **Google Colab** | [colab_quickstart.ipynb](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) |
-| **VS Code** | Clone repo → `pip install -e ".[notebook,download]"` → open `notebooks/colab_quickstart.ipynb` |
+| **VS Code (local)** | `notebooks/cfd_geometry_quickstart.ipynb` after `pip install -e ".[notebook,download]"` |
 
-The quick-start notebook installs the package, lets you **draw the study extent** on a map, downloads OSM data, and writes sample `buildings.stl` / `trees.stl`. In Colab, STEP 1 installs with **`--no-deps`** so Colab’s numpy/scipy are not upgraded (avoids `_blas_supports_fpe` errors). `moviepy`/`decorator` warnings are usually harmless. Plotly preview uses HTML output (no `nbformat` required).
+Colab and VS Code use **separate notebooks**. Colab installs from GitHub with `--no-deps` to protect numpy; the local notebook editable-installs from your clone.
 
 Minimal extent-only flow:
 
