@@ -1,6 +1,10 @@
 # CFD Geometry
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb)
+
 Python package for building **STL geometry** from GIS and elevation data, aimed at **urban wind / OpenFOAM** workflows.
+
+**Try it:** [Google Colab quick start](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb) (no install) or open `notebooks/cfd_geometry_quickstart.ipynb` in VS Code after cloning. See [notebooks/README.md](notebooks/README.md).
 
 ## Install
 
@@ -14,6 +18,7 @@ pip install -e ".[dev]"
 Optional extras:
 
 - `pip install -e ".[download]"` — auto-download OSM shapefiles (and optional DEM) via OSMnx
+- `pip install -e ".[notebook]"` — interactive map extent picker for Jupyter / VS Code notebooks
 - `pip install -e ".[gdal]"` — alternate DEM readers when rasterio cannot open a file
 
 Without installing, run modules with `PYTHONPATH=src python3 -m cfd_geometry.cli.main --help`.
@@ -92,6 +97,25 @@ cfd-geometry highways roads.shp -o roads.stl --align-with buildings.shp --clip-t
 cfd-geometry terrain dem.tif -o terrain.stl --offset-x 424265.04 --offset-y 4765565.05
 # Use the same offset as buildings; terrain Z defaults to "center" so ground ≈ z=0
 cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 500 720
+```
+
+## Notebooks (Colab & VS Code)
+
+| Launch | Link |
+|--------|------|
+| **Google Colab** | [cfd_geometry_quickstart.ipynb](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb) |
+| **VS Code / Cursor** | Clone repo → `pip install -e ".[notebook,download]"` → open `notebooks/cfd_geometry_quickstart.ipynb` |
+
+The quick-start notebook installs the package, lets you **draw the study extent** on a map, downloads OSM data, and writes sample `buildings.stl` / `trees.stl`. In Colab, widget support is enabled automatically via `setup_colab_widgets()`.
+
+Minimal extent-only flow:
+
+```python
+from cfd_geometry.notebook import select_extent, setup_colab_widgets
+
+setup_colab_widgets()  # no-op outside Colab
+sel = select_extent(place="Milwaukee, Wisconsin, USA")
+# draw rectangle → "Use this extent" → sel.bbox (WGS84, same as CLI --bbox)
 ```
 
 ## Python API
