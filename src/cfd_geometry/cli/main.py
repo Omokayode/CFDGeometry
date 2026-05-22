@@ -169,6 +169,31 @@ def _cmd_highways(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_download(args: argparse.Namespace) -> int:
+    from cfd_geometry.download.bbox import bbox_from_sequence
+    from cfd_geometry.download.config import DownloadConfig
+    from cfd_geometry.download.run import download_domain
+
+    bbox = None
+    if args.bbox:
+        bbox = bbox_from_sequence(tuple(args.bbox))
+
+    layers = tuple(args.layers)
+    if args.dem and "dem" not in layers:
+        layers = layers + ("dem",)
+
+    config = DownloadConfig(
+        output_dir=args.output_dir,
+        place=args.place,
+        bbox=bbox,
+        layers=layers,
+        download_dem=args.dem,
+        network_timeout=args.timeout,
+    )
+    download_domain(config)
+    return 0
+
+
 def _cmd_clip(args: argparse.Namespace) -> int:
     from cfd_geometry.clipper.clipper import clip_stl_to_bounds
 
@@ -291,6 +316,48 @@ def main(argv: list[str] | None = None) -> int:
     p_hw.add_argument("--clip-to", nargs="+", help="Reference shapefiles for spatial clip")
     p_hw.add_argument("--type-column", default=None)
     p_hw.set_defaults(func=_cmd_highways)
+
+    p_dl = sub.add_parser(
+        "download",
+        help="Download OSM buildings/trees/highways (optional DEM) for a place or bbox",
+    )
+    p_dl.add_argument(
+        "-o",
+        "--output-dir",
+        required=True,
+        help="Directory for shapefiles and dem.tif (e.g. data/input)",
+    )
+    place = p_dl.add_mutually_exclusive_group(required=True)
+    place.add_argument(
+        "--place",
+        help='Geocoded area name, e.g. "Milwaukee, Wisconsin, USA"',
+    )
+    place.add_argument(
+        "--bbox",
+        nargs=4,
+        type=float,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="WGS84 bounds in degrees (west south east north)",
+    )
+    p_dl.add_argument(
+        "--layers",
+        nargs="+",
+        choices=["buildings", "trees", "highways"],
+        default=["buildings", "trees", "highways"],
+        help="OSM vector layers to fetch (default: all three)",
+    )
+    p_dl.add_argument(
+        "--dem",
+        action="store_true",
+        help="Also download SRTM DEM via OpenTopography (needs OPENTOPOGRAPHY_API_KEY)",
+    )
+    p_dl.add_argument(
+        "--timeout",
+        type=int,
+        default=180,
+        help="OSM network timeout in seconds (default: 180)",
+    )
+    p_dl.set_defaults(func=_cmd_download)
 
     p_c = sub.add_parser("clip", help="Clip STL to a bounding box")
     p_c.add_argument("input")

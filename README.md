@@ -11,11 +11,36 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 ```
 
-Optional: `pip install -e ".[gdal]"` for alternate DEM readers when rasterio cannot open a file.
+Optional extras:
+
+- `pip install -e ".[download]"` — auto-download OSM shapefiles (and optional DEM) via OSMnx
+- `pip install -e ".[gdal]"` — alternate DEM readers when rasterio cannot open a file
 
 Without installing, run modules with `PYTHONPATH=src python3 -m cfd_geometry.cli.main --help`.
 
 ## Quick start (CLI)
+
+### Auto-download inputs (optional)
+
+Fetch OpenStreetMap buildings, trees, and roads for a place or bounding box:
+
+```bash
+pip install -e ".[download]"
+
+# By place name (geocoded)
+cfd-geometry download -o data/input --place "Milwaukee, Wisconsin, USA"
+
+# By WGS84 bbox: west south east north
+cfd-geometry download -o data/input --bbox -88.0 43.0 -87.5 43.5 --layers buildings trees
+
+# Optional SRTM DEM (free OpenTopography API key required)
+export OPENTOPOGRAPHY_API_KEY='your-key'
+cfd-geometry download -o data/input --place "Oklahoma City, OK" --dem
+```
+
+Writes `buildings.shp`, `trees.shp`, `highways.shp`, and optionally `dem.tif` under the output directory.
+
+### Extrude to STL
 
 Compute a shared origin so terrain, buildings, and trees align:
 
@@ -65,6 +90,7 @@ src/cfd_geometry/
 ├── mesh/         # STL I/O, polygon extrusion
 ├── raster/       # DEM loading and elevation sampling
 ├── buildings/    # OSM heights, trimesh extrusion (+ DEM-aware extrude_dem)
+├── download/     # OSM / optional DEM auto-download (VoxCity-style data sourcing)
 ├── openfoam/     # blockMeshDict vertex snippets
 ├── trees/        # Point trees (+ DEM-aware extrude_dem)
 ├── highways/     # Road linework extrusion
