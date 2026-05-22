@@ -25,18 +25,24 @@ def create_highway_geometry(
     width: float,
     height: float,
     padding: float = 0.5,
+    *,
+    base_z: list[float] | None = None,
 ) -> list:
-    """Build a solid road prism from a 2D centerline."""
+    """Build a solid road prism from a 2D centerline (optional per-vertex base Z)."""
     triangles: list = []
     total_width = width + 2 * padding
 
     if len(line_coords) < 2:
         return triangles
 
+    if base_z is not None and len(base_z) != len(line_coords):
+        raise ValueError("base_z must have one value per centerline vertex")
+
     left_coords = []
     right_coords = []
 
     for i, (x, y) in enumerate(line_coords):
+        bz = float(base_z[i]) if base_z is not None else 0.0
         if i == 0:
             dx = line_coords[i + 1][0] - x
             dy = line_coords[i + 1][1] - y
@@ -54,16 +60,24 @@ def create_highway_geometry(
 
         perp_x, perp_y = -dy, dx
         half = total_width / 2
-        left_coords.append([x + perp_x * half, y + perp_y * half, height])
-        right_coords.append([x - perp_x * half, y - perp_y * half, height])
+        left_coords.append([x + perp_x * half, y + perp_y * half, bz + height])
+        right_coords.append([x - perp_x * half, y - perp_y * half, bz + height])
 
     for i in range(len(line_coords) - 1):
         p1, p2, p3, p4 = left_coords[i], right_coords[i], left_coords[i + 1], right_coords[i + 1]
         triangles.append([p1, p3, p2])
         triangles.append([p2, p3, p4])
 
-    bottom_left = [[c[0], c[1], 0] for c in left_coords]
-    bottom_right = [[c[0], c[1], 0] for c in right_coords]
+    if base_z is not None:
+        bottom_left = [
+            [left_coords[i][0], left_coords[i][1], base_z[i]] for i in range(len(line_coords))
+        ]
+        bottom_right = [
+            [right_coords[i][0], right_coords[i][1], base_z[i]] for i in range(len(line_coords))
+        ]
+    else:
+        bottom_left = [[c[0], c[1], 0] for c in left_coords]
+        bottom_right = [[c[0], c[1], 0] for c in right_coords]
 
     for i in range(len(line_coords) - 1):
         p1, p2, p3, p4 = bottom_left[i], bottom_right[i], bottom_left[i + 1], bottom_right[i + 1]

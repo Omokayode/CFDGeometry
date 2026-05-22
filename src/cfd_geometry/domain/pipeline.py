@@ -197,6 +197,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
         config.build_terrain
         or (config.build_buildings and "buildings" in inputs)
         or (config.build_trees and "trees" in inputs)
+        or (config.build_highways and "highways" in inputs)
     ):
         from cfd_geometry.raster.elevation import (
             ensure_preprocessed_elevation,
@@ -282,6 +283,26 @@ def build_domain(config: DomainConfig) -> DomainResult:
         )
         result.stl_files["buildings_on_dem"] = out
         result.extrude_stats["buildings_on_dem"] = stats
+
+    if config.build_highways and "highways" in inputs and dem_path:
+        from cfd_geometry.highways.extrude_dem import extrude_highways_to_stl_with_dem
+
+        out = config.stl_dir / "highways_on_dem.stl"
+        stats = extrude_highways_to_stl_with_dem(
+            str(inputs["highways"]),
+            dem_path,
+            str(out),
+            offset_x=offset[0],
+            offset_y=offset[1],
+            alignment_shapefiles=align_paths,
+            reference_shapefiles=align_paths,
+            target_crs=result.target_crs,
+            z_reference=config.terrain_z_reference,
+            z_offset=z_offset,
+            elevation_data=elevation_data,
+        )
+        result.stl_files["highways_on_dem"] = out
+        result.extrude_stats["highways_on_dem"] = stats
 
     print("\n" + "=" * 70)
     print("DOMAIN BUILD COMPLETE")
