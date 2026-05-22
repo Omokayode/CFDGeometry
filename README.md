@@ -34,6 +34,8 @@ Default download extent for streets/points is about **500 m × 500 m** (`--buffe
 
 Options: `--no-trees`, `--highways`, `--dem`, `--terrain`, `--no-download` (use existing `data/input/`).
 
+With `--dem`: also writes `buildings_on_dem.stl` and `trees_on_dem.stl` (bases on terrain). Use those with `terrain.stl` in ParaView/OpenFOAM; flat `buildings.stl` / `trees.stl` stay at z=0 for simple setups.
+
 ### Auto-download inputs only (optional)
 
 Fetch OpenStreetMap buildings, trees, and roads for a place or bounding box:

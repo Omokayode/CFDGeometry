@@ -23,6 +23,8 @@ from cfd_geometry.mesh.trimesh_extrude import (
 from cfd_geometry.raster.elevation import (
     ground_elevation_for_polygon,
     load_elevation_raster,
+    local_ground_z,
+    resolve_dem_z_offset,
 )
 
 
@@ -41,6 +43,9 @@ def extrude_buildings_to_stl_with_dem(
     estimate_heights: bool | None = None,
     combined_offset: tuple[float, float] | None = None,
     shapefile_list: list[str] | None = None,
+    z_reference: str = "center",
+    z_offset: float | None = None,
+    elevation_data: dict | None = None,
 ) -> dict:
     """Extrude buildings with each footprint base placed on the DEM surface."""
     shapefile = str(shapefile)
@@ -67,7 +72,8 @@ def extrude_buildings_to_stl_with_dem(
     engine = ensure_triangulation_backend()
     print(f"Triangulation engine: {engine}")
 
-    elevation_data = load_elevation_raster(dem_path, resolved_crs)
+    if elevation_data is None:
+        elevation_data = load_elevation_raster(dem_path, resolved_crs, build_interpolator=True)
 
     gdf = gdf[gdf.geometry.notna()].copy()
     invalid = ~gdf.geometry.apply(lambda g: g.is_valid and not g.is_empty)
@@ -84,6 +90,10 @@ def extrude_buildings_to_stl_with_dem(
             offset_x, offset_y = get_combined_offset(shapefile_list, target_epsg)
         else:
             offset_x, offset_y = get_local_transform(gdf)
+
+    if z_offset is None:
+        print("Building vertical alignment:")
+        z_offset = resolve_dem_z_offset(elevation_data, offset_x, offset_y, z_reference)
 
     all_triangles: list = []
     processed = 0
@@ -108,7 +118,13 @@ def extrude_buildings_to_stl_with_dem(
             geom_world = geom
 
         ground_z = (
-            ground_elevation_for_polygon(geom_world, elevation_data) + elevation_offset
+            local_ground_z(
+                geom_world.centroid.x,
+                geom_world.centroid.y,
+                elevation_data,
+                z_offset,
+            )
+            + elevation_offset
         )
         elevation_stats.append(ground_z)
 
@@ -140,4 +156,5 @@ def extrude_buildings_to_stl_with_dem(
         "mean_ground_elevation": float(np.mean(elevation_stats))
         if elevation_stats
         else 0.0,
+        "z_offset_applied": z_offset,
     }

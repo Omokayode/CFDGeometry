@@ -149,6 +149,29 @@ def build_domain(config: DomainConfig) -> DomainResult:
         result.extrude_stats["highways"] = stats
 
     dem_path = inputs.get("dem") or (config.dem_tif if config.dem_tif.exists() else None)
+    z_offset: float | None = None
+    elevation_data = None
+
+    if dem_path and (
+        config.build_terrain
+        or (config.build_buildings and "buildings" in inputs)
+        or (config.build_trees and "trees" in inputs)
+    ):
+        from cfd_geometry.raster.elevation import load_elevation_raster, resolve_dem_z_offset
+
+        elevation_data = load_elevation_raster(
+            str(dem_path),
+            result.target_crs or "EPSG:32616",
+            build_interpolator=True,
+            max_resolution=config.dem_max_resolution,
+        )
+        z_offset = resolve_dem_z_offset(
+            elevation_data,
+            offset[0],
+            offset[1],
+            config.terrain_z_reference,
+        )
+
     if config.build_terrain:
         if not dem_path:
             print("Warning: --terrain requested but no dem.tif; skipping terrain STL")
@@ -156,7 +179,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
             from cfd_geometry.terrain.dem_to_stl import dem_to_stl_with_offset
 
             out = config.stl_dir / "terrain.stl"
-            dem_to_stl_with_offset(
+            terrain_stats = dem_to_stl_with_offset(
                 str(dem_path),
                 str(out),
                 offset[0],
@@ -164,9 +187,30 @@ def build_domain(config: DomainConfig) -> DomainResult:
                 target_crs=result.target_crs,
                 max_resolution=config.dem_max_resolution,
                 z_reference=config.terrain_z_reference,
+                elevation_data=elevation_data,
+                z_offset=z_offset,
             )
             result.stl_files["terrain"] = out
-            result.extrude_stats["terrain"] = {"output": str(out)}
+            result.extrude_stats["terrain"] = terrain_stats
+
+    if config.build_trees and "trees" in inputs and dem_path:
+        from cfd_geometry.trees.extrude_dem import extrude_trees_to_stl_with_dem
+
+        out = config.stl_dir / "trees_on_dem.stl"
+        stats = extrude_trees_to_stl_with_dem(
+            str(inputs["trees"]),
+            dem_path,
+            str(out),
+            combined_offset=offset,
+            alignment_shapefiles=align_paths,
+            default_height=config.tree_default_height,
+            target_crs=result.target_crs,
+            z_reference=config.terrain_z_reference,
+            z_offset=z_offset,
+            elevation_data=elevation_data,
+        )
+        result.stl_files["trees_on_dem"] = out
+        result.extrude_stats["trees_on_dem"] = stats
 
     if config.build_buildings and "buildings" in inputs and dem_path:
         from cfd_geometry.buildings.extrude_dem import (
@@ -184,6 +228,9 @@ def build_domain(config: DomainConfig) -> DomainResult:
             shapefile_list=align_paths,
             target_crs=resolved_crs,
             auto_utm=config.auto_utm,
+            z_reference=config.terrain_z_reference,
+            z_offset=z_offset,
+            elevation_data=elevation_data,
         )
         result.stl_files["buildings_on_dem"] = out
         result.extrude_stats["buildings_on_dem"] = stats

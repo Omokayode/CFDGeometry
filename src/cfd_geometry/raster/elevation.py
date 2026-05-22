@@ -356,6 +356,47 @@ def ground_elevation_for_polygon(
     return float(np.mean(valid)) if valid else 0.0
 
 
+def resolve_dem_z_offset(
+    elevation_data: dict,
+    offset_x: float,
+    offset_y: float,
+    z_reference: str = "center",
+) -> float:
+    """
+    Elevation (m) to subtract so DEM-based layers match terrain at z≈0.
+
+    Same logic as terrain STL ``z_reference`` (center / min / none).
+    """
+    elev = elevation_data["elevation"]
+    if z_reference == "none":
+        return 0.0
+    if z_reference == "min":
+        ref = float(np.nanmin(elev))
+        print(f"DEM Z reference: min elevation = {ref:.2f} m")
+        return ref
+    if z_reference == "center":
+        ref = get_elevation_at_point(offset_x, offset_y, elevation_data)
+        if ref == 0.0 and np.nanmin(elev) != 0:
+            ref = float(np.nanmin(elev))
+            print(f"DEM Z reference: center sample failed; using min = {ref:.2f} m")
+        else:
+            print(
+                f"DEM Z reference: center ({offset_x:.1f}, {offset_y:.1f}) = {ref:.2f} m"
+            )
+        return ref
+    raise ValueError(f"Unknown z_reference: {z_reference!r}")
+
+
+def local_ground_z(
+    x: float,
+    y: float,
+    elevation_data: dict,
+    z_offset: float,
+) -> float:
+    """Ground elevation in local coordinates (aligned with normalized terrain)."""
+    return get_elevation_at_point(x, y, elevation_data) - z_offset
+
+
 def get_elevation_at_point(x: float, y: float, elevation_data: dict) -> float:
     """Sample ground elevation at (x, y) in the raster CRS."""
     if "interpolator" not in elevation_data:
