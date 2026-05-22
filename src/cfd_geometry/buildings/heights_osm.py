@@ -112,7 +112,8 @@ def parse_height_string(height_str: Any) -> float | None:
     if height <= 0:
         return None
 
-    if height > 200 and "ft" not in text and "m" not in text:
+    # Bare large integers without units are often feet in US OSM exports (e.g. "150").
+    if height >= 100 and "ft" not in text and "m" not in text:
         height *= 0.3048
 
     return height
