@@ -6,33 +6,27 @@ import trimesh
 import trimesh.util
 from shapely.geometry import MultiPolygon, Polygon
 
-# Prefer mapbox-earcut (FSF-friendly); manifold3d is optional fallback
-_ENGINE_ORDER = ("earcut", "manifold")
-
-
 def resolve_triangulation_engine() -> str | None:
     """Return the first installed trimesh triangulation engine name."""
+    try:
+        import mapbox_earcut  # noqa: F401
+
+        return "earcut"
+    except ImportError:
+        pass
+
+    try:
+        import manifold3d  # noqa: F401
+
+        return "manifold"
+    except ImportError:
+        pass
+
     from trimesh import creation
 
     for name, available in creation._engines:
         if available:
             return name
-
-    for name in _ENGINE_ORDER:
-        if name == "earcut":
-            try:
-                import mapbox_earcut  # noqa: F401
-
-                return "earcut"
-            except ImportError:
-                continue
-        if name == "manifold":
-            try:
-                import manifold3d  # noqa: F401
-
-                return "manifold"
-            except ImportError:
-                continue
     return None
 
 
