@@ -55,7 +55,6 @@ def download_domain(config: DownloadConfig) -> DownloadResult:
 
     if config.download_dem or "dem" in config.layers:
         from cfd_geometry.buildings.extents import dem_download_bbox_around_buildings
-        from cfd_geometry.download.osm import resolve_bbox
 
         if config.dem_bbox is not None:
             dem_bbox = config.dem_bbox
