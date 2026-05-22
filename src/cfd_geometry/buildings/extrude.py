@@ -16,7 +16,6 @@ from shapely.ops import transform
 from cfd_geometry.buildings.load import (
     HeightSource,
     height_for_row,
-    load_buildings_gdf,
     min_height_for_row,
     prepare_buildings_gdf,
     resolve_min_height_column,
@@ -89,6 +88,12 @@ def extrude_buildings_to_stl(
     blockmesh_output: str | Path | None = None,
     ground_stl_output: str | Path | None = None,
     workers: int = 1,
+    repair_geometry: bool = True,
+    resolve_overlaps: str | bool = False,
+    overlap_ratio_threshold: float = 0.5,
+    complement_raster: str | Path | None = None,
+    simplify_tolerance: float | None = None,
+    height_strategy=None,
 ) -> dict:
     """
     Convert building footprints to a binary STL for OpenFOAM.
@@ -110,25 +115,37 @@ def extrude_buildings_to_stl(
         else:
             height_source = "none"
 
+    prep_kw = dict(
+        target_crs=target_crs,
+        auto_utm=auto_utm,
+        height_source=height_source,
+        height_col=height_col,
+        default_height=default_height,
+        repair_geometry=repair_geometry,
+        resolve_overlaps=resolve_overlaps,
+        overlap_ratio_threshold=overlap_ratio_threshold,
+        complement_raster=complement_raster,
+        simplify_tolerance=simplify_tolerance,
+        height_strategy=height_strategy,
+    )
+
     if isinstance(buildings, gpd.GeoDataFrame):
         gdf, resolved_crs, active_height_col = prepare_buildings_gdf(
             buildings,
-            target_crs=target_crs,
-            auto_utm=auto_utm,
-            height_source=height_source,
-            height_col=height_col,
-            default_height=default_height,
+            **prep_kw,
         )
         source_label = "GeoDataFrame"
     else:
         source_label = str(buildings)
-        gdf, resolved_crs, active_height_col = load_buildings_gdf(
-            str(buildings),
-            target_crs=target_crs,
-            auto_utm=auto_utm,
-            height_source=height_source,
-            height_col=height_col,
-            default_height=default_height,
+        gdf = gpd.read_file(str(buildings))
+        from cfd_geometry.geo.crs import fix_shapefile_crs
+
+        if gdf.crs is None:
+            gdf = fix_shapefile_crs(str(buildings), write_back=False)
+        gdf, resolved_crs, active_height_col = prepare_buildings_gdf(
+            gdf,
+            source_label=str(buildings),
+            **prep_kw,
         )
 
     return extrude_buildings_gdf_to_stl(
@@ -180,22 +197,6 @@ def extrude_buildings_gdf_to_stl(
     if active_min_col:
         print(f"Using per-building base column: {active_min_col}")
 
-    valid_mask = gdf.geometry.notna()
-    gdf = gdf[valid_mask].copy()
-    gdf["_geom_valid"] = gdf.geometry.apply(
-        lambda g: g.is_valid if g is not None else False
-    )
-    invalid = (~gdf["_geom_valid"]).sum()
-    if invalid:
-        print(f"Attempting buffer(0) fix on {invalid} invalid geometries")
-        gdf.loc[~gdf["_geom_valid"], "geometry"] = gdf.loc[
-            ~gdf["_geom_valid"], "geometry"
-        ].buffer(0)
-        gdf["_geom_valid"] = gdf.geometry.apply(
-            lambda g: g.is_valid and not g.is_empty if g is not None else False
-        )
-
-    gdf = gdf[gdf["_geom_valid"]].drop(columns=["_geom_valid"])
     print(f"Valid geometries: {len(gdf)}")
     _print_height_source_stats(gdf)
 

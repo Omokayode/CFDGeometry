@@ -123,6 +123,28 @@ extrude_buildings_to_stl(
 dem_to_stl_with_offset("dem.tif", "terrain.stl", ox, oy)
 ```
 
+## Pluggable sources (strategies)
+
+Height, ground, and tree geometry use small strategy objects instead of scattered flags:
+
+| Strategy | Names | Role |
+|----------|-------|------|
+| **Height** | `osm`, `area`, `column`, `composite`, `raster`, `default` | Building extrusion heights |
+| **Ground** | `flat`, `dem` | Base Z (flat or DEM sampler) |
+| **Tree** | `canopy`, `cylinder`, `sphere`, `skip` | Tree mesh shape |
+
+Recommended for CFD studies: **`--height-source composite`** — uses column heights when present, then OSM rules, area tiers, and optional **`--complement-raster`** for gaps. Use **`--resolve-overlaps fast`** to drop duplicate footprints.
+
+```python
+from cfd_geometry.sources import height_source_from_name, HeightAssignOptions
+
+strategy = height_source_from_name(
+    "composite",
+    options=HeightAssignOptions(complement_raster="building_heights.tif"),
+)
+gdf, col = strategy.apply(buildings_gdf)
+```
+
 ## Package layout
 
 ```
@@ -130,7 +152,8 @@ src/cfd_geometry/
 ├── geo/          # CRS repair, combined offsets
 ├── mesh/         # STL I/O, polygon extrusion
 ├── raster/       # DEM loading and elevation sampling
-├── buildings/    # OSM heights, trimesh extrusion (+ DEM-aware extrude_dem)
+├── buildings/    # OSM heights, geometry repair, overlaps, trimesh extrusion
+├── sources/      # HeightSource, GroundSource, TreeModel strategies
 ├── domain/       # build_domain() orchestrator (download + extrude)
 ├── download/     # OSM / optional DEM auto-download
 ├── openfoam/     # blockMeshDict vertex snippets

@@ -159,6 +159,10 @@ def build_domain(config: DomainConfig) -> DomainResult:
             ground_buffer=config.ground_buffer,
             blockmesh_output=config.stl_dir / "blockMeshDict_vertices.txt",
             workers=config.workers,
+            resolve_overlaps=config.resolve_overlaps,
+            overlap_ratio_threshold=config.overlap_ratio_threshold,
+            complement_raster=config.complement_raster,
+            simplify_tolerance=config.simplify_tolerance,
         )
         result.stl_files["buildings"] = out
         result.extrude_stats["buildings"] = stats
@@ -173,6 +177,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
             combined_offset=offset,
             alignment_shapefiles=align_paths,
             default_height=config.tree_default_height,
+            tree_model=config.tree_model,
             target_crs=result.target_crs,
         )
         result.stl_files["trees"] = out

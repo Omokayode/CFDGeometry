@@ -10,7 +10,8 @@ from cfd_geometry.geo.crs import fix_shapefile_crs
 from cfd_geometry.geo.offsets import get_combined_offset
 from cfd_geometry.mesh.normals import mesh_bounds
 from cfd_geometry.mesh.stl_io import write_stl_binary
-from cfd_geometry.trees.geometry import create_tree_canopy, default_tree_config
+from cfd_geometry.sources.trees import tree_model_from_name
+from cfd_geometry.trees.geometry import default_tree_config
 
 import geopandas as gpd
 
@@ -24,11 +25,13 @@ def extrude_trees_to_stl(
     height_column: str | None = None,
     default_height: float = 5.0,
     tree_config: dict | None = None,
+    tree_model: str = "canopy",
     use_local_coords: bool = True,
     target_crs: str = DEFAULT_TARGET_CRS,
 ) -> dict:
     """Convert a point shapefile to tree STL aligned with other layers."""
     cfg = tree_config or default_tree_config()
+    model = tree_model_from_name(tree_model)
     gdf = gpd.read_file(shapefile_path)
     if gdf.crs is None:
         gdf = fix_shapefile_crs(shapefile_path, write_back=False)
@@ -71,23 +74,12 @@ def extrude_trees_to_stl(
             height = default_height
 
         height_stats.append(height)
-        trunk_h = height * cfg["trunk_height_ratio"]
-        canopy_h = height - trunk_h
-        canopy_r = height * cfg["canopy_radius_ratio"]
 
         try:
-            triangles.extend(
-                create_tree_canopy(
-                    pt,
-                    canopy_r,
-                    trunk_h,
-                    canopy_h,
-                    cfg["trunk_radius"],
-                    canopy_shape=cfg["canopy_shape"],
-                    sides=cfg["detail_level"],
-                )
-            )
-            created += 1
+            tris = model.triangles_at(pt, height=height, cfg=cfg)
+            if tris:
+                triangles.extend(tris)
+                created += 1
         except Exception as e:
             print(f"Tree at index {idx} failed: {e}")
 

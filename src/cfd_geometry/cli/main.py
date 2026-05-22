@@ -54,6 +54,9 @@ def _cmd_buildings(args: argparse.Namespace) -> int:
         blockmesh_output=args.blockmesh_output,
         ground_stl_output=args.ground_stl,
         workers=max(1, args.workers),
+        resolve_overlaps=args.resolve_overlaps or False,
+        complement_raster=args.complement_raster,
+        simplify_tolerance=args.simplify_tolerance,
     )
     if args.validate:
         validate_stl(args.output)
@@ -96,6 +99,7 @@ def _cmd_trees(args: argparse.Namespace) -> int:
         combined_offset=offset,
         alignment_shapefiles=args.align_with,
         default_height=args.default_height,
+        tree_model=args.tree_model,
         target_crs=f"EPSG:{args.epsg}",
     )
     return 0
@@ -215,6 +219,10 @@ def _cmd_domain(args: argparse.Namespace) -> int:
         dem_buffer_m=args.dem_buffer_m,
         dem_bbox=dem_bbox,
         workers=max(1, args.workers),
+        resolve_overlaps=args.resolve_overlaps or False,
+        complement_raster=args.complement_raster,
+        simplify_tolerance=args.simplify_tolerance,
+        tree_model=args.tree_model,
     )
     build_domain(config)
     return 0
@@ -299,9 +307,28 @@ def main(argv: list[str] | None = None) -> int:
     p_b.add_argument("--height-column", default=None)
     p_b.add_argument(
         "--height-source",
-        choices=["osm", "area", "column", "none"],
+        choices=["osm", "area", "column", "composite", "raster", "default", "none"],
         default="osm",
-        help="Height assignment: OSM tags (default), footprint area, column, or fixed default",
+        help="Height strategy: osm, area, column, composite (recommended), raster, default",
+    )
+    p_b.add_argument(
+        "--resolve-overlaps",
+        choices=["fast", "precise"],
+        default=None,
+        help="Drop or clip overlapping footprints before extrusion",
+    )
+    p_b.add_argument(
+        "--complement-raster",
+        default=None,
+        metavar="PATH",
+        help="GeoTIFF to fill missing heights (used with composite/raster sources)",
+    )
+    p_b.add_argument(
+        "--simplify-tolerance",
+        type=float,
+        default=None,
+        metavar="M",
+        help="Douglas-Peucker simplify tolerance in meters (optional)",
     )
     p_b.add_argument("--default-height", type=float, default=9.0)
     p_b.add_argument("--ground-level", type=float, default=0.0)
@@ -357,6 +384,12 @@ def main(argv: list[str] | None = None) -> int:
     p_tr.add_argument("-o", "--output", required=True)
     p_tr.add_argument("--align-with", nargs="+")
     p_tr.add_argument("--default-height", type=float, default=10.0)
+    p_tr.add_argument(
+        "--tree-model",
+        choices=["canopy", "cylinder", "sphere", "skip"],
+        default="canopy",
+        help="Tree mesh shape (default: canopy)",
+    )
     p_tr.set_defaults(func=_cmd_trees)
 
     p_bd = sub.add_parser("buildings-dem", help="Extrude buildings onto a DEM surface")
@@ -447,10 +480,24 @@ def main(argv: list[str] | None = None) -> int:
     p_dom.add_argument("--timeout", type=int, default=180)
     p_dom.add_argument(
         "--height-source",
-        choices=["osm", "area", "column", "none"],
-        default="osm",
+        choices=["osm", "area", "column", "composite", "raster", "default", "none"],
+        default="composite",
+        help="Height strategy (composite = column + OSM + area + optional raster fill)",
     )
+    p_dom.add_argument(
+        "--resolve-overlaps",
+        choices=["fast", "precise"],
+        default=None,
+        help="Resolve overlapping building footprints",
+    )
+    p_dom.add_argument("--complement-raster", default=None, metavar="PATH")
+    p_dom.add_argument("--simplify-tolerance", type=float, default=None, metavar="M")
     p_dom.add_argument("--default-height", type=float, default=9.0)
+    p_dom.add_argument(
+        "--tree-model",
+        choices=["canopy", "cylinder", "sphere", "skip"],
+        default="canopy",
+    )
     p_dom.add_argument(
         "--ground-buffer",
         type=float,

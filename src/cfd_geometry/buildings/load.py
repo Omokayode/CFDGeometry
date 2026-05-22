@@ -7,11 +7,13 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 
-from cfd_geometry.buildings.heights import _height_from_area
-from cfd_geometry.buildings.heights_osm import apply_osm_heights_to_gdf
+from cfd_geometry.buildings.geometry_prep import repair_building_geometries, warn_if_areas_look_like_degrees
+from cfd_geometry.buildings.overlaps import resolve_overlapping_footprints
 from cfd_geometry.geo.crs import fix_shapefile_crs, resolve_target_crs
+from cfd_geometry.sources.base import HeightAssignOptions, HeightSourceStrategy
+from cfd_geometry.sources.height import height_source_from_name
 
-HeightSource = str  # "osm" | "area" | "column" | "none"
+HeightSource = str  # "osm" | "area" | "column" | "none" | "raster" | "composite" | "default"
 
 # Common height / base columns (VoxCity-style and OSM exports)
 DEFAULT_HEIGHT_COLUMNS = (
@@ -55,37 +57,32 @@ def assign_building_heights(
     height_source: HeightSource = "osm",
     height_col: str | None = None,
     default_height: float = 9.0,
+    height_strategy: HeightSourceStrategy | None = None,
+    height_options: HeightAssignOptions | None = None,
+    complement_raster: str | None = None,
 ) -> tuple[gpd.GeoDataFrame, str]:
     """
     Assign heights on ``gdf`` and return (gdf, active_height_column).
 
-    ``height_source``:
-    - ``osm``: OSM attribute rules
-    - ``area``: footprint-area tiers
-    - ``column``: use existing ``height_col`` column
-    - ``none``: use ``default_height`` unless ``height_col`` is set
+    Pass ``height_strategy`` for explicit control, or ``height_source`` name for CLI compat.
+    Use ``height_source='composite'`` for column → OSM → area → raster/GDF complement.
     """
-    if height_source == "osm":
-        return apply_osm_heights_to_gdf(gdf, default_height=default_height), "estimated_height"
+    if height_strategy is not None:
+        return height_strategy.apply(gdf)
 
-    if height_source == "area":
-        out = gdf.copy()
-        out["area_sqm"] = out.geometry.area
-        out["estimated_height"] = out["area_sqm"].apply(_height_from_area)
-        return out, "estimated_height"
-
-    if height_source == "column":
-        resolved = resolve_height_column(gdf, height_col)
-        if not resolved:
-            raise ValueError(
-                "height_source='column' requires a height column "
-                f"(tried {DEFAULT_HEIGHT_COLUMNS})"
-            )
-        return gdf, resolved
-
-    if height_col:
-        return gdf, height_col
-    return gdf, ""
+    opts = height_options or HeightAssignOptions(
+        default_height=default_height,
+        height_col=height_col,
+        complement_raster=complement_raster,
+    )
+    strategy = height_source_from_name(
+        height_source,
+        options=opts,
+        height_col=height_col,
+        default_height=default_height,
+        raster_path=complement_raster if height_source == "raster" else None,
+    )
+    return strategy.apply(gdf)
 
 
 def prepare_buildings_gdf(
@@ -97,6 +94,13 @@ def prepare_buildings_gdf(
     height_col: str | None = None,
     default_height: float = 9.0,
     source_label: str = "GeoDataFrame",
+    repair_geometry: bool = True,
+    simplify_tolerance: float | None = None,
+    resolve_overlaps: str | bool = False,
+    overlap_ratio_threshold: float = 0.5,
+    complement_raster: str | Path | None = None,
+    complement_gdf: gpd.GeoDataFrame | None = None,
+    height_strategy: HeightSourceStrategy | None = None,
 ) -> tuple[gpd.GeoDataFrame, str, str]:
     """
     Prepare an in-memory building footprint table for extrusion.
@@ -124,11 +128,37 @@ def prepare_buildings_gdf(
         print(f"Reprojecting to {resolved}")
         gdf = gdf.to_crs(resolved)
 
+    warn_if_areas_look_like_degrees(gdf)
+
+    if repair_geometry:
+        gdf, _ = repair_building_geometries(
+            gdf, simplify_tolerance=simplify_tolerance
+        )
+
+    if resolve_overlaps:
+        method = "fast" if resolve_overlaps is True else str(resolve_overlaps)
+        gdf, _ = resolve_overlapping_footprints(
+            gdf,
+            method=method,
+            overlap_ratio_threshold=overlap_ratio_threshold,
+        )
+
+    height_options = HeightAssignOptions(
+        default_height=default_height,
+        height_col=height_col,
+        complement_raster=str(complement_raster) if complement_raster else None,
+        complement_gdf=complement_gdf,
+        overlap_ratio_threshold=overlap_ratio_threshold,
+    )
+
     gdf, active_col = assign_building_heights(
         gdf,
         height_source=height_source,
         height_col=height_col,
         default_height=default_height,
+        height_strategy=height_strategy,
+        height_options=height_options,
+        complement_raster=str(complement_raster) if complement_raster else None,
     )
     return gdf, resolved, active_col
 
@@ -141,6 +171,10 @@ def load_buildings_gdf(
     height_source: HeightSource = "osm",
     height_col: str | None = None,
     default_height: float = 9.0,
+    repair_geometry: bool = True,
+    resolve_overlaps: str | bool = False,
+    complement_raster: str | Path | None = None,
+    **prepare_kwargs,
 ) -> tuple[gpd.GeoDataFrame, str, str]:
     """
     Read a shapefile, resolve CRS, reproject, and assign heights.
@@ -162,6 +196,10 @@ def load_buildings_gdf(
         height_col=height_col,
         default_height=default_height,
         source_label=shapefile,
+        repair_geometry=repair_geometry,
+        resolve_overlaps=resolve_overlaps,
+        complement_raster=complement_raster,
+        **prepare_kwargs,
     )
 
 

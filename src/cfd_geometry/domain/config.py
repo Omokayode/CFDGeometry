@@ -42,6 +42,11 @@ class DomainConfig:
 
     height_source: str = "osm"
     default_height: float = 9.0
+    resolve_overlaps: str | bool = False
+    overlap_ratio_threshold: float = 0.5
+    complement_raster: str | None = None
+    simplify_tolerance: float | None = None
+    tree_model: str = "canopy"
     ground_buffer: float | None = 500.0
     auto_utm: bool = True
     target_crs: str | None = None
