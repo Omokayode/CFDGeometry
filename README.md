@@ -6,10 +6,14 @@ Python package for building **STL geometry** from GIS and elevation data, aimed 
 
 ```bash
 cd CFDGeometry
-pip install -e .
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
 ```
 
-Optional extras: `pip install -e ".[dev]"` or `".[gdal]"` for alternate DEM readers.
+Optional: `pip install -e ".[gdal]"` for alternate DEM readers when rasterio cannot open a file.
+
+Without installing, run modules with `PYTHONPATH=src python3 -m cfd_geometry.cli.main --help`.
 
 ## Quick start (CLI)
 
@@ -23,7 +27,10 @@ Build layers (use the same shapefile list for `--align-with`):
 
 ```bash
 cfd-geometry buildings buildings.shp -o buildings.stl --align-with buildings.shp trees.shp
+cfd-geometry buildings-dem buildings.shp dem.tif -o buildings.stl --align-with buildings.shp
 cfd-geometry trees trees.shp -o trees.stl --align-with buildings.shp trees.shp
+cfd-geometry trees-dem trees.shp dem.tif -o trees.stl --align-with buildings.shp
+cfd-geometry highways roads.shp -o roads.stl --align-with buildings.shp --clip-to buildings.shp
 cfd-geometry terrain dem.tif -o terrain.stl --offset-x 424265.04 --offset-y 4765565.05
 cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 500 720
 ```
@@ -51,8 +58,9 @@ src/cfd_geometry/
 ├── geo/          # CRS repair, combined offsets
 ├── mesh/         # STL I/O, polygon extrusion
 ├── raster/       # DEM loading and elevation sampling
-├── buildings/    # Footprint extrusion + height estimation
-├── trees/        # Point trees
+├── buildings/    # Footprint extrusion (+ DEM-aware extrude_dem)
+├── trees/        # Point trees (+ DEM-aware extrude_dem)
+├── highways/     # Road linework extrusion
 ├── terrain/      # DEM → terrain STL
 ├── clipper/      # Bounding-box STL clip
 ├── base/         # Terrain-fitted solid base

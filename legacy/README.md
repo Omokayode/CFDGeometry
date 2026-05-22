@@ -11,7 +11,8 @@ cfd-geometry --help
 
 | Legacy folder | Replacement |
 |---------------|-------------|
-| Root `*.py` scripts | `cfd-geometry` CLI or `import cfd_geometry` |
+| Root `*.py` shims | `cfd-geometry` CLI or `import cfd_geometry` |
+| `root_scripts/` | Older one-off scripts (clip+base, VTK download, etc.) |
 | `wRaster/` | Terrain-aware workflows (port in progress; see `cfd_geometry.raster`) |
 | `workingVersion/` | Archived known-good copies |
 | `deprecated/` | Outdated approaches |

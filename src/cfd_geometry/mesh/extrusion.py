@@ -32,6 +32,15 @@ def triangulate_2d(coords: list, z: float = 0.0, invert: bool = False) -> list:
     return triangles
 
 
+def polygon_to_triangles_at_elevation(
+    polygon: Polygon,
+    height: float,
+    ground_elevation: float,
+) -> list:
+    """Extrude a footprint with base at ``ground_elevation`` and top at base + height."""
+    return polygon_to_triangles(polygon, height, ground_elevation)
+
+
 def polygon_to_triangles(
     polygon: Polygon,
     height: float,

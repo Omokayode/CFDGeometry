@@ -483,7 +483,8 @@ class OptimizedRectangularBaseGenerator:
             print(f"Error writing ASCII STL: {e}")
             return False
 
-def main():
+
+def _cli_main():
     # =============================================================================
     # CONFIGURATION - Set these values for your terrain-fitted base
     # =============================================================================
@@ -621,4 +622,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
-    sys.exit(main())
+
+    sys.exit(_cli_main())

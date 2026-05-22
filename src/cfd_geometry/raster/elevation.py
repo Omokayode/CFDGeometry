@@ -218,6 +218,49 @@ def preprocess_elevation(
     return elevation_data
 
 
+def get_elevation_at_points(
+    points: list[tuple[float, float]],
+    elevation_data: dict,
+) -> list[float]:
+    """Sample elevation at multiple (x, y) points in raster CRS."""
+    if not points:
+        return []
+    if "interpolator" not in elevation_data:
+        _attach_interpolator(elevation_data)
+    arr = np.array(points)
+    values = elevation_data["interpolator"]((arr[:, 1], arr[:, 0]))
+    return [float(v) if not np.isnan(v) else 0.0 for v in values]
+
+
+def ground_elevation_for_polygon(
+    polygon,
+    elevation_data: dict,
+    *,
+    sample_points: int = 5,
+) -> float:
+    """Average ground elevation under a polygon footprint."""
+    from shapely.geometry import Point
+
+    minx, miny, maxx, maxy = polygon.bounds
+    sample_x = np.linspace(minx, maxx, sample_points)
+    sample_y = np.linspace(miny, maxy, sample_points)
+
+    points_to_sample = []
+    for x in sample_x:
+        for y in sample_y:
+            pt = Point(x, y)
+            if polygon.contains(pt) or polygon.touches(pt):
+                points_to_sample.append((x, y))
+
+    if not points_to_sample:
+        boundary = list(polygon.exterior.coords)
+        points_to_sample = [(x, y) for x, y in boundary[:sample_points]]
+
+    elevations = get_elevation_at_points(points_to_sample, elevation_data)
+    valid = [e for e in elevations if not np.isnan(e) and e != 0]
+    return float(np.mean(valid)) if valid else 0.0
+
+
 def get_elevation_at_point(x: float, y: float, elevation_data: dict) -> float:
     """Sample ground elevation at (x, y) in the raster CRS."""
     if "interpolator" not in elevation_data:
