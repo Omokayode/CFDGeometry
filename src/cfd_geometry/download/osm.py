@@ -79,10 +79,16 @@ def resolve_bbox(
                 f'(e.g. "Milwaukee, Wisconsin, USA") or use --bbox west south east north.'
             ) from exc
 
-        north, south, east, west = ox.utils_geo.bbox_from_point(
+        # OSMnx 2.x: left, bottom, right, top = west, south, east, north
+        west, south, east, north = ox.utils_geo.bbox_from_point(
             point, dist=place_buffer_m
         )
-        resolved = Bbox(west=float(west), south=float(south), east=float(east), north=float(north))
+        resolved = Bbox(
+            west=float(west),
+            south=float(south),
+            east=float(east),
+            north=float(north),
+        )
         print(
             f"Note: '{place}' is a street or point in OSM, not an area polygon. "
             f"Using a {place_buffer_m:.0f} m buffer around the geocoded location."
