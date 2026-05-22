@@ -163,6 +163,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
                 offset[1],
                 target_crs=result.target_crs,
                 max_resolution=config.dem_max_resolution,
+                z_reference=config.terrain_z_reference,
             )
             result.stl_files["terrain"] = out
             result.extrude_stats["terrain"] = {"output": str(out)}

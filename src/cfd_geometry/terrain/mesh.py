@@ -10,8 +10,14 @@ def create_terrain_mesh_with_offset(
     offset_x: float,
     offset_y: float,
     scale_factor: float = 1.0,
+    *,
+    z_offset: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Build X, Y, Z grids from raster data with a local coordinate offset."""
+    """
+    Build X, Y, Z grids from raster data with a local coordinate offset.
+
+    ``z_offset`` is subtracted from elevations (use to match buildings/trees at z=0).
+    """
     elevation = elevation_data["elevation"]
     bounds = elevation_data["bounds"]
     rows, cols = elevation.shape
@@ -19,7 +25,7 @@ def create_terrain_mesh_with_offset(
     x_coords = np.linspace(bounds[0] - offset_x, bounds[2] - offset_x, cols) * scale_factor
     y_coords = np.linspace(bounds[3] - offset_y, bounds[1] - offset_y, rows) * scale_factor
     X, Y = np.meshgrid(x_coords, y_coords)
-    Z = elevation
+    Z = elevation - z_offset
     return X, Y, Z
 
 

@@ -42,6 +42,7 @@ class DomainConfig:
     target_crs: str | None = None
     tree_default_height: float = 10.0
     dem_max_resolution: int = DEFAULT_DEM_MAX_RESOLUTION
+    terrain_z_reference: str = "center"
 
     input_subdir: str = "input"
     output_subdir: str = "output"

@@ -80,6 +80,7 @@ cfd-geometry trees trees.shp -o trees.stl --align-with buildings.shp trees.shp
 cfd-geometry trees-dem trees.shp dem.tif -o trees.stl --align-with buildings.shp
 cfd-geometry highways roads.shp -o roads.stl --align-with buildings.shp --clip-to buildings.shp
 cfd-geometry terrain dem.tif -o terrain.stl --offset-x 424265.04 --offset-y 4765565.05
+# Use the same offset as buildings; terrain Z defaults to "center" so ground ≈ z=0
 cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 500 720
 ```
 

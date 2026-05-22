@@ -70,6 +70,7 @@ def _cmd_terrain(args: argparse.Namespace) -> int:
         max_resolution=args.max_res,
         add_base=not args.no_base,
         target_crs=f"EPSG:{args.epsg}",
+        z_reference=args.z_reference,
     )
     return 0
 
@@ -319,6 +320,12 @@ def main(argv: list[str] | None = None) -> int:
     p_t.add_argument("--smooth", type=float, default=0.0)
     p_t.add_argument("--max-res", type=int, default=None)
     p_t.add_argument("--no-base", action="store_true")
+    p_t.add_argument(
+        "--z-reference",
+        choices=["center", "min", "none"],
+        default="center",
+        help="Subtract DEM elevation so terrain aligns with buildings at z=0 (default: center)",
+    )
     p_t.set_defaults(func=_cmd_terrain)
 
     p_tr = sub.add_parser("trees", help="Convert tree point shapefile to STL")
