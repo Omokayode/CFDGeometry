@@ -17,6 +17,36 @@ _COLAB_WIDGET_DEPS = (
 )
 
 
+def find_repo_root(start: Path | None = None) -> Path:
+    """
+    Locate the CFDGeometry repo root (contains ``src/cfd_geometry/domain``).
+
+    Notebooks often run with cwd ``notebooks/``; walk parents so editable
+    install still works in VS Code.
+    """
+    here = (start or Path.cwd()).resolve()
+    for p in (here, *here.parents):
+        if (p / "src" / "cfd_geometry" / "domain").is_dir():
+            return p
+    return here
+
+
+def verify_domain_import() -> None:
+    """Raise with setup hints if the full package (including ``domain``) is missing."""
+    try:
+        from cfd_geometry.domain import DomainConfig, build_domain  # noqa: F401
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "cfd_geometry is installed without the domain package.\n"
+            "VS Code / local fix:\n"
+            "  1. File → Open Folder → CFDGeometry repo root (not only notebooks/)\n"
+            "  2. Select the .venv kernel (Python: .venv/bin/python)\n"
+            "  3. Terminal: python -m pip install -U pip setuptools wheel\n"
+            "  4. Terminal: python -m pip install -e \".[notebook,download]\"\n"
+            "  5. Re-run the STEP 1 install cell\n"
+        ) from exc
+
+
 def in_colab() -> bool:
     try:
         import google.colab  # noqa: F401
@@ -39,7 +69,7 @@ def install_for_notebook(*, repo_root: Path | None = None) -> None:
     Local clone: editable install with ``[notebook,download]``.
     Colab: install ``[download]`` from GitHub, then widget deps with only-if-needed.
     """
-    root = repo_root or Path.cwd()
+    root = repo_root or find_repo_root()
     src_pkg = root / "src" / "cfd_geometry"
 
     if in_colab():

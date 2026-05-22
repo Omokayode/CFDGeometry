@@ -2,13 +2,20 @@
 
 from cfd_geometry.notebook.colab import setup_colab_widgets
 from cfd_geometry.notebook.extent import ExtentSelector, bbox_from_draw_geojson, select_extent
-from cfd_geometry.notebook.install import in_colab, install_for_notebook
+from cfd_geometry.notebook.install import (
+    find_repo_root,
+    in_colab,
+    install_for_notebook,
+    verify_domain_import,
+)
 
 __all__ = [
     "ExtentSelector",
     "bbox_from_draw_geojson",
+    "find_repo_root",
     "in_colab",
     "install_for_notebook",
+    "verify_domain_import",
     "plot_domain_stls",
     "plot_stl_files",
     "select_extent",
