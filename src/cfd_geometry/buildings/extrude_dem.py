@@ -4,19 +4,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-from shapely.geometry import MultiPolygon, Polygon
 from shapely.ops import transform
 
-from cfd_geometry.buildings.heights import estimate_heights_from_footprint_area
-from cfd_geometry.constants import DEFAULT_TARGET_CRS
-from cfd_geometry.geo.crs import fix_shapefile_crs
+import numpy as np
+
+from cfd_geometry.buildings.load import (
+    HeightSource,
+    height_for_row,
+    load_buildings_gdf,
+)
 from cfd_geometry.geo.offsets import get_combined_offset, get_local_transform
-from cfd_geometry.mesh.extrusion import polygon_to_triangles_at_elevation
 from cfd_geometry.mesh.normals import mesh_bounds
 from cfd_geometry.mesh.stl_io import write_stl_binary
+from cfd_geometry.mesh.trimesh_extrude import extrude_geometry_to_triangles
 from cfd_geometry.raster.elevation import (
     ground_elevation_for_polygon,
     load_elevation_raster,
@@ -29,11 +29,13 @@ def extrude_buildings_to_stl_with_dem(
     output_stl: str | Path,
     *,
     height_col: str | None = None,
-    default_height: float = 10.0,
+    height_source: HeightSource = "osm",
+    default_height: float = 9.0,
     elevation_offset: float = 0.0,
     use_local_coords: bool = True,
-    target_crs: str = DEFAULT_TARGET_CRS,
-    estimate_heights: bool = True,
+    target_crs: str | None = None,
+    auto_utm: bool = True,
+    estimate_heights: bool | None = None,
     combined_offset: tuple[float, float] | None = None,
     shapefile_list: list[str] | None = None,
 ) -> dict:
@@ -42,22 +44,32 @@ def extrude_buildings_to_stl_with_dem(
     dem_path = str(dem_path)
     output_stl = str(output_stl)
 
-    elevation_data = load_elevation_raster(dem_path, target_crs)
+    if estimate_heights is not None:
+        if estimate_heights:
+            height_source = "area"
+        elif height_col:
+            height_source = "column"
+        else:
+            height_source = "none"
 
-    if estimate_heights:
-        gdf = estimate_heights_from_footprint_area(shapefile)
-        height_col = "estimated_height"
-    else:
-        gdf = gpd.read_file(shapefile)
-        if gdf.crs is None:
-            gdf = fix_shapefile_crs(shapefile, write_back=False)
+    gdf, resolved_crs, active_height_col = load_buildings_gdf(
+        shapefile,
+        target_crs=target_crs,
+        auto_utm=auto_utm,
+        height_source=height_source,
+        height_col=height_col,
+        default_height=default_height,
+    )
 
-    target_epsg = int(target_crs.split(":")[1])
-    if gdf.crs.to_epsg() != target_epsg:
-        gdf = gdf.to_crs(target_crs)
+    elevation_data = load_elevation_raster(dem_path, resolved_crs)
 
-    gdf = gdf[gdf.geometry.notna() & gdf.is_valid]
+    gdf = gdf[gdf.geometry.notna()].copy()
+    invalid = ~gdf.geometry.apply(lambda g: g.is_valid and not g.is_empty)
+    if invalid.any():
+        gdf.loc[invalid, "geometry"] = gdf.loc[invalid, "geometry"].buffer(0)
+    gdf = gdf[gdf.geometry.apply(lambda g: g.is_valid and not g.is_empty)]
 
+    target_epsg = int(resolved_crs.split(":")[1])
     offset_x, offset_y = 0.0, 0.0
     if use_local_coords:
         if combined_offset is not None:
@@ -69,21 +81,19 @@ def extrude_buildings_to_stl_with_dem(
 
     all_triangles: list = []
     processed = 0
+    failed = 0
     elevation_stats: list[float] = []
 
     for _, row in gdf.iterrows():
         geom = row.geometry
-        if geom.is_empty or not geom.is_valid:
+        if geom is None or geom.is_empty:
             continue
 
-        height = default_height
-        if height_col and height_col in row and pd.notna(row[height_col]):
-            try:
-                height = float(row[height_col])
-                if height <= 0:
-                    height = default_height
-            except (ValueError, TypeError):
-                height = default_height
+        height = height_for_row(
+            row,
+            height_col=active_height_col,
+            default_height=default_height,
+        )
 
         if use_local_coords:
             geom = transform(lambda x, y: (x - offset_x, y - offset_y), geom)
@@ -96,13 +106,12 @@ def extrude_buildings_to_stl_with_dem(
         )
         elevation_stats.append(ground_z)
 
-        polys = [geom] if isinstance(geom, Polygon) else list(geom.geoms)
-        for poly in polys:
-            if poly.is_valid and not poly.is_empty:
-                all_triangles.extend(
-                    polygon_to_triangles_at_elevation(poly, height, ground_z)
-                )
-        processed += 1
+        tris = extrude_geometry_to_triangles(geom, height, ground_level=ground_z)
+        if tris:
+            all_triangles.extend(tris)
+            processed += 1
+        else:
+            failed += 1
 
     if not all_triangles:
         raise RuntimeError("No triangles generated")
@@ -111,15 +120,16 @@ def extrude_buildings_to_stl_with_dem(
         output_stl, all_triangles, header=b"Building STL with DEM for OpenFOAM"
     )
     bounds = mesh_bounds(all_triangles)
-    print(f"DEM buildings: {processed} footprints -> {output_stl}")
+    print(f"DEM buildings: {processed} ok, {failed} failed -> {output_stl}")
 
     return {
         "buildings_processed": processed,
+        "buildings_failed": failed,
         "triangles": len(all_triangles),
         "bounds": bounds,
         "offset": (offset_x, offset_y),
-        "mean_ground_elevation": float(np.mean(elevation_stats)) if elevation_stats else 0.0,
+        "target_crs": resolved_crs,
+        "mean_ground_elevation": float(np.mean(elevation_stats))
+        if elevation_stats
+        else 0.0,
     }
-
-
-# Flat-ground extrusion remains available as extrude_buildings_to_stl.

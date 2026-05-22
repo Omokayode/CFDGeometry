@@ -6,7 +6,32 @@ import geopandas as gpd
 import pandas as pd
 
 from cfd_geometry.constants import DEFAULT_EPSG
-from cfd_geometry.geo.crs import fix_shapefile_crs
+from cfd_geometry.geo.crs import fix_shapefile_crs, resolve_target_crs
+
+
+def target_epsg_for_shapefiles(
+    shapefile_paths: list[str],
+    *,
+    target_epsg: int = DEFAULT_EPSG,
+    auto_utm: bool = True,
+) -> int:
+    """EPSG code to use for offsets and extrusion (auto UTM when input is WGS84)."""
+    if not auto_utm:
+        return target_epsg
+
+    gdfs = []
+    for path in shapefile_paths:
+        gdf = gpd.read_file(path)
+        if gdf.crs is None:
+            gdf = fix_shapefile_crs(path, write_back=False)
+        gdfs.append(gdf[["geometry"]])
+
+    merged = gpd.GeoDataFrame(
+        pd.concat(gdfs, ignore_index=True),
+        crs=gdfs[0].crs,
+    )
+    resolved = resolve_target_crs(merged, None, auto_utm=True)
+    return int(resolved.split(":")[1])
 
 
 def get_combined_offset(
