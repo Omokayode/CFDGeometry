@@ -62,7 +62,7 @@ def write_blockmesh_vertices(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text("\n".join(lines), encoding="utf-8")
 
-    return {
+    info = {
         "nx": nx,
         "ny": ny,
         "nz": nz,
@@ -71,3 +71,116 @@ def write_blockmesh_vertices(
         "domain_length": length,
         "domain_height": z_max,
     }
+    return info
+
+
+def write_blockmesh_dict(
+    output_path: str | Path,
+    *,
+    x_min: float,
+    x_max: float,
+    y_min: float,
+    y_max: float,
+    z_max: float,
+    cell_size: float = 5.0,
+    z_min: float = 0.0,
+) -> dict:
+    """
+    Write a minimal OpenFOAM ``blockMeshDict`` for a rectangular wind-tunnel box.
+
+    Boundary names: ``inlet``, ``outlet``, ``ground``, ``top``, ``sides``.
+    Adjust patch types and flow direction in your case before running blockMesh.
+    """
+    output_path = Path(output_path)
+    info = write_blockmesh_vertices(
+        output_path.with_suffix(".vertices.txt"),
+        x_min=x_min,
+        x_max=x_max,
+        y_min=y_min,
+        y_max=y_max,
+        z_max=z_max,
+        cell_size=cell_size,
+    )
+    nx, ny, nz = info["nx"], info["ny"], info["nz"]
+
+    text = f"""FoamFile
+{{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}}
+
+convertToMeters 1;
+
+vertices
+(
+    ({x_min:.2f} {y_min:.2f} {z_min:.2f})
+    ({x_max:.2f} {y_min:.2f} {z_min:.2f})
+    ({x_max:.2f} {y_max:.2f} {z_min:.2f})
+    ({x_min:.2f} {y_max:.2f} {z_min:.2f})
+    ({x_min:.2f} {y_min:.2f} {z_max:.2f})
+    ({x_max:.2f} {y_min:.2f} {z_max:.2f})
+    ({x_max:.2f} {y_max:.2f} {z_max:.2f})
+    ({x_min:.2f} {y_max:.2f} {z_max:.2f})
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ({nx} {ny} {nz}) simpleGrading (1 1 1)
+);
+
+edges
+(
+);
+
+boundary
+(
+    inlet
+    {{
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }}
+    outlet
+    {{
+        type patch;
+        faces
+        (
+            (1 2 6 5)
+        );
+    }}
+    ground
+    {{
+        type wall;
+        faces
+        (
+            (0 1 2 3)
+        );
+    }}
+    top
+    {{
+        type patch;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }}
+    sides
+    {{
+        type patch;
+        faces
+        (
+            (0 1 5 4)
+            (3 7 6 2)
+        );
+    }}
+);
+"""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(text, encoding="utf-8")
+    print(f"blockMeshDict: {output_path}")
+    info["blockmesh_dict"] = str(output_path)
+    return info

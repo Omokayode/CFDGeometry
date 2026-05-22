@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import geopandas as gpd
@@ -24,7 +25,26 @@ from cfd_geometry.mesh.trimesh_extrude import (
     ensure_triangulation_backend,
     extrude_geometry_to_triangles,
 )
-from cfd_geometry.openfoam.blockmesh import write_blockmesh_vertices
+from cfd_geometry.openfoam.blockmesh import write_blockmesh_dict, write_blockmesh_vertices
+
+
+def _extrude_one_building(
+    geom,
+    height: float,
+    ground_level: float,
+    offset_x: float,
+    offset_y: float,
+    engine: str,
+    use_local_coords: bool,
+):
+    """Worker-friendly single-footprint extrusion (returns triangles or None)."""
+    if geom is None or geom.is_empty:
+        return None
+    if use_local_coords:
+        geom = transform(lambda x, y: (x - offset_x, y - offset_y), geom)
+    return extrude_geometry_to_triangles(
+        geom, height, ground_level=ground_level, engine=engine
+    )
 
 
 def _print_height_source_stats(gdf: gpd.GeoDataFrame) -> None:
@@ -56,6 +76,7 @@ def extrude_buildings_to_stl(
     ground_buffer: float | None = None,
     blockmesh_output: str | Path | None = None,
     ground_stl_output: str | Path | None = None,
+    workers: int = 1,
 ) -> dict:
     """
     Convert building footprints to a binary STL for OpenFOAM.
@@ -120,12 +141,12 @@ def extrude_buildings_to_stl(
     stats = {"success": 0, "failed": 0, "skipped": 0}
     max_building_height = 0.0
 
+    jobs: list[tuple] = []
     for _, row in gdf.iterrows():
         geom = row.geometry
         if geom is None or geom.is_empty:
             stats["skipped"] += 1
             continue
-
         height = height_for_row(
             row,
             height_col=active_height_col,
@@ -133,18 +154,47 @@ def extrude_buildings_to_stl(
         )
         height_stats.append(height)
         max_building_height = max(max_building_height, height)
+        jobs.append((geom, height))
 
-        if use_local_coords:
-            geom = transform(lambda x, y: (x - offset_x, y - offset_y), geom)
-
-        tris = extrude_geometry_to_triangles(
-            geom, height, ground_level=ground_level, engine=engine
-        )
-        if tris:
-            all_triangles.extend(tris)
-            stats["success"] += 1
-        else:
-            stats["failed"] += 1
+    if workers > 1 and len(jobs) > 1:
+        print(f"Extruding {len(jobs)} buildings with {workers} workers")
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            futures = [
+                pool.submit(
+                    _extrude_one_building,
+                    geom,
+                    height,
+                    ground_level,
+                    offset_x,
+                    offset_y,
+                    engine,
+                    use_local_coords,
+                )
+                for geom, height in jobs
+            ]
+            for fut in as_completed(futures):
+                tris = fut.result()
+                if tris:
+                    all_triangles.extend(tris)
+                    stats["success"] += 1
+                else:
+                    stats["failed"] += 1
+    else:
+        for geom, height in jobs:
+            tris = _extrude_one_building(
+                geom,
+                height,
+                ground_level,
+                offset_x,
+                offset_y,
+                engine,
+                use_local_coords,
+            )
+            if tris:
+                all_triangles.extend(tris)
+                stats["success"] += 1
+            else:
+                stats["failed"] += 1
 
     if not all_triangles:
         raise RuntimeError(
@@ -225,6 +275,15 @@ def extrude_buildings_to_stl(
             offset_note=(
                 f"Translation offset: ({offset_x:.2f}, {offset_y:.2f}) m; CRS {resolved_crs}"
             ),
+        )
+        bm_dict_path = Path(bm_path).parent / "blockMeshDict"
+        bm_info = write_blockmesh_dict(
+            bm_dict_path,
+            x_min=gx_min,
+            x_max=gx_max,
+            y_min=gy_min,
+            y_max=gy_max,
+            z_max=domain_height,
         )
         print(f"blockMesh snippet: {bm_path}")
         print(
