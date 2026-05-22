@@ -63,9 +63,13 @@ def _print_height_source_stats(gdf: gpd.GeoDataFrame) -> None:
     print("Height data sources:")
     for src, n in counts.items():
         print(f"  {src}: {n}")
-    real = int(counts.get("explicit", 0) + counts.get("levels", 0))
+    # ``column`` = shapefile/OSM height field (e.g. "395 ft"); same role as ``explicit``.
+    reliable = ("explicit", "levels", "column")
+    real = int(sum(counts.get(s, 0) for s in reliable))
     if len(gdf):
-        print(f"  With explicit height or levels: {real} ({100 * real / len(gdf):.1f}%)")
+        print(
+            f"  With height tag, column, or levels: {real} ({100 * real / len(gdf):.1f}%)"
+        )
 
 
 def extrude_buildings_to_stl(

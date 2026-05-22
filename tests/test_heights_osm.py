@@ -23,6 +23,25 @@ def test_parse_height_feet_suffix():
     assert parse_height_string("395 ft") == pytest.approx(395 * 0.3048, rel=1e-3)
 
 
+def test_reliable_height_sources_include_column():
+    """Composite tags shapefile heights as column; count them like explicit."""
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+
+    gdf = gpd.GeoDataFrame(
+        {
+            "height_source": ["levels", "column", "estimated", "area"],
+            "geometry": [Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])] * 4,
+        },
+        crs="EPSG:32616",
+    )
+    counts = gdf["height_source"].value_counts()
+    reliable = int(
+        sum(counts.get(s, 0) for s in ("explicit", "levels", "column"))
+    )
+    assert reliable == 2
+
+
 def test_parse_height_numeric():
     assert parse_height_string(12) == 12.0
 
