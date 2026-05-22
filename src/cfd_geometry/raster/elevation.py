@@ -378,7 +378,28 @@ def preprocess_elevation(
     elevation_data["elevation"] = elevation
     if "interpolator" in elevation_data:
         _attach_interpolator(elevation_data)
+    elevation_data["_preprocessed"] = True
     return elevation_data
+
+
+def ensure_preprocessed_elevation(
+    elevation_data: dict,
+    *,
+    smooth_sigma: float = 0,
+    max_resolution: int | None = None,
+    vertical_scale: float = 1.0,
+    crop_to_valid: bool = True,
+) -> dict:
+    """Run :func:`preprocess_elevation` once; safe to call on already-processed data."""
+    if elevation_data.get("_preprocessed"):
+        return elevation_data
+    return preprocess_elevation(
+        dict(elevation_data),
+        smooth_sigma=smooth_sigma,
+        max_resolution=max_resolution,
+        vertical_scale=vertical_scale,
+        crop_to_valid=crop_to_valid,
+    )
 
 
 def get_elevation_at_points(

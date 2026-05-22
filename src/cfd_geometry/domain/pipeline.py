@@ -198,12 +198,20 @@ def build_domain(config: DomainConfig) -> DomainResult:
         or (config.build_buildings and "buildings" in inputs)
         or (config.build_trees and "trees" in inputs)
     ):
-        from cfd_geometry.raster.elevation import load_elevation_raster, resolve_dem_z_offset
+        from cfd_geometry.raster.elevation import (
+            ensure_preprocessed_elevation,
+            load_elevation_raster,
+            resolve_dem_z_offset,
+        )
 
         elevation_data = load_elevation_raster(
             str(dem_path),
             result.target_crs or "EPSG:32616",
             build_interpolator=True,
+            max_resolution=config.dem_max_resolution,
+        )
+        elevation_data = ensure_preprocessed_elevation(
+            elevation_data,
             max_resolution=config.dem_max_resolution,
         )
         z_offset = resolve_dem_z_offset(

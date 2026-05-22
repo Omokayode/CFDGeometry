@@ -7,8 +7,8 @@ import numpy as np
 from cfd_geometry.constants import DEFAULT_TARGET_CRS
 from cfd_geometry.mesh.stl_io import write_stl_binary
 from cfd_geometry.raster.elevation import (
+    ensure_preprocessed_elevation,
     load_elevation_raster,
-    preprocess_elevation,
     resolve_dem_z_offset,
 )
 from cfd_geometry.terrain.mesh import (
@@ -50,12 +50,12 @@ def dem_to_stl_with_offset(
             build_interpolator=True,
             max_resolution=max_resolution,
         )
-        elevation_data = preprocess_elevation(
-            elevation_data,
-            smooth_sigma=smooth_sigma,
-            max_resolution=max_resolution,
-            vertical_scale=vertical_scale,
-        )
+    elevation_data = ensure_preprocessed_elevation(
+        elevation_data,
+        smooth_sigma=smooth_sigma,
+        max_resolution=max_resolution,
+        vertical_scale=vertical_scale,
+    )
 
     if z_offset is None:
         print("Terrain vertical alignment:")
