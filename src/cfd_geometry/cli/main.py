@@ -189,6 +189,7 @@ def _cmd_download(args: argparse.Namespace) -> int:
         layers=layers,
         download_dem=args.dem,
         network_timeout=args.timeout,
+        place_buffer_m=args.buffer_m,
     )
     download_domain(config)
     return 0
@@ -356,6 +357,12 @@ def main(argv: list[str] | None = None) -> int:
         type=int,
         default=180,
         help="OSM network timeout in seconds (default: 180)",
+    )
+    p_dl.add_argument(
+        "--buffer-m",
+        type=float,
+        default=2000.0,
+        help="When --place is a street/point (not a city polygon), buffer radius in meters (default: 2000)",
     )
     p_dl.set_defaults(func=_cmd_download)
 

@@ -42,6 +42,7 @@ def resolve_bbox(
     place: str | None,
     bbox: Bbox | None,
     timeout: int,
+    place_buffer_m: float = 2000.0,
 ) -> Bbox:
     """Resolve a place name to WGS84 bounds or validate a supplied bbox."""
     ox = _import_osmnx()
@@ -53,17 +54,43 @@ def resolve_bbox(
 
     assert place is not None
     print(f"Geocoding place: {place}")
-    gdf = ox.geocode_to_gdf(place)
-    bounds = gdf.total_bounds
-    resolved = Bbox(
-        west=float(bounds[0]),
-        south=float(bounds[1]),
-        east=float(bounds[2]),
-        north=float(bounds[3]),
-    )
+
+    resolved: Bbox | None = None
+    method = "admin boundary"
+
+    try:
+        gdf = ox.geocode_to_gdf(place)
+        bounds = gdf.total_bounds
+        resolved = Bbox(
+            west=float(bounds[0]),
+            south=float(bounds[1]),
+            east=float(bounds[2]),
+            north=float(bounds[3]),
+        )
+    except Exception:
+        method = f"point/line buffer ({place_buffer_m:.0f} m)"
+
+    if resolved is None:
+        try:
+            point = ox.geocode(place)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Could not geocode place '{place}'. Try a broader name "
+                f'(e.g. "Milwaukee, Wisconsin, USA") or use --bbox west south east north.'
+            ) from exc
+
+        north, south, east, west = ox.utils_geo.bbox_from_point(
+            point, dist=place_buffer_m
+        )
+        resolved = Bbox(west=float(west), south=float(south), east=float(east), north=float(north))
+        print(
+            f"Note: '{place}' is a street or point in OSM, not an area polygon. "
+            f"Using a {place_buffer_m:.0f} m buffer around the geocoded location."
+        )
+
     resolved.validate()
     print(
-        f"Bounds (WGS84): west={resolved.west:.5f} south={resolved.south:.5f} "
+        f"Bounds ({method}, WGS84): west={resolved.west:.5f} south={resolved.south:.5f} "
         f"east={resolved.east:.5f} north={resolved.north:.5f}"
     )
     return resolved

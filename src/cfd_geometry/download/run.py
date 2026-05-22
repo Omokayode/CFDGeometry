@@ -24,6 +24,7 @@ def download_domain(config: DownloadConfig) -> DownloadResult:
         place=config.place,
         bbox=config.bbox,
         timeout=config.network_timeout,
+        place_buffer_m=config.place_buffer_m,
     )
 
     result = DownloadResult(output_dir=config.output_dir, bbox=bbox)

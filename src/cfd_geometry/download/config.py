@@ -29,6 +29,7 @@ class DownloadConfig:
     highways_filename: str = "highways.shp"
     opentopography_demtype: str = "SRTMGL1"
     network_timeout: int = 180
+    place_buffer_m: float = 2000.0
 
     def __post_init__(self) -> None:
         self.output_dir = Path(self.output_dir)

@@ -27,8 +27,11 @@ Fetch OpenStreetMap buildings, trees, and roads for a place or bounding box:
 ```bash
 pip install -e ".[download]"
 
-# By place name (geocoded)
+# By place name (geocoded; cities use admin boundaries)
 cfd-geometry download -o data/input --place "Milwaukee, Wisconsin, USA"
+
+# Streets/points get a buffer (default 2 km); widen with --buffer-m
+cfd-geometry download -o data/input --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA" --buffer-m 3000
 
 # By WGS84 bbox: west south east north
 cfd-geometry download -o data/input --bbox -88.0 43.0 -87.5 43.5 --layers buildings trees
