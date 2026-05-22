@@ -18,9 +18,12 @@ def download_domain(config: DownloadConfig) -> DownloadResult:
 
     Returns paths and feature counts for each layer written.
     """
+    # Bind at entry so a later local import cannot shadow the module-level name.
+    _resolve_bbox = resolve_bbox
+
     config.output_dir.mkdir(parents=True, exist_ok=True)
 
-    bbox = resolve_bbox(
+    bbox = _resolve_bbox(
         place=config.place,
         bbox=config.bbox,
         timeout=config.network_timeout,
@@ -66,7 +69,7 @@ def download_domain(config: DownloadConfig) -> DownloadResult:
                 fallback_bbox=bbox,
             )
         else:
-            dem_bbox = resolve_bbox(
+            dem_bbox = _resolve_bbox(
                 place=config.place,
                 bbox=config.bbox,
                 timeout=config.network_timeout,

@@ -4,8 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from cfd_geometry.buildings.extents import dem_download_bbox_around_buildings
 from cfd_geometry.domain.config import DomainConfig, DomainResult
+from cfd_geometry.download.bbox import Bbox
 from cfd_geometry.download.config import DownloadConfig
+from cfd_geometry.download.dem import download_dem_opentopography
+from cfd_geometry.download.osm import resolve_bbox
 from cfd_geometry.download.run import download_domain
 from cfd_geometry.geo.offsets import get_combined_offset, target_epsg_for_shapefiles
 from cfd_geometry.geo.paths import filter_vector_inputs
@@ -31,6 +35,30 @@ def _alignment_shapefiles(inputs: dict[str, Path], config: DomainConfig) -> list
     if not paths:
         paths = list(inputs.values())
     return [str(p) for p in paths]
+
+
+def _resolve_dem_bbox(
+    config: DomainConfig,
+    inputs: dict[str, Path],
+    *,
+    fallback_bbox: Bbox | None,
+) -> Bbox:
+    """WGS84 bounds for DEM download."""
+    if config.dem_bbox is not None:
+        print("DEM extent: user-specified bbox")
+        return config.dem_bbox
+    if "buildings" in inputs:
+        return dem_download_bbox_around_buildings(
+            inputs["buildings"],
+            buffer_m=config.dem_buffer_m,
+            fallback_bbox=fallback_bbox,
+        )
+    return resolve_bbox(
+        place=config.place,
+        bbox=config.bbox,
+        timeout=config.network_timeout,
+        place_buffer_m=config.dem_buffer_m,
+    )
 
 
 def build_domain(config: DomainConfig) -> DomainResult:
@@ -63,26 +91,9 @@ def build_domain(config: DomainConfig) -> DomainResult:
         inputs.update(dl_result.files)
 
         if config.download_dem:
-            from cfd_geometry.buildings.extents import dem_download_bbox_around_buildings
-            from cfd_geometry.download.dem import download_dem_opentopography
-            from cfd_geometry.download.osm import resolve_bbox
-
-            if config.dem_bbox is not None:
-                dem_bbox = config.dem_bbox
-                print("DEM extent: user-specified bbox")
-            elif "buildings" in inputs:
-                dem_bbox = dem_download_bbox_around_buildings(
-                    inputs["buildings"],
-                    buffer_m=config.dem_buffer_m,
-                    fallback_bbox=dl_result.bbox,
-                )
-            else:
-                dem_bbox = resolve_bbox(
-                    place=config.place,
-                    bbox=config.bbox,
-                    timeout=config.network_timeout,
-                    place_buffer_m=config.dem_buffer_m,
-                )
+            dem_bbox = _resolve_dem_bbox(
+                config, inputs, fallback_bbox=dl_result.bbox
+            )
             dem_path = config.dem_tif
             download_dem_opentopography(dem_bbox, dem_path)
             inputs["dem"] = dem_path
@@ -96,17 +107,10 @@ def build_domain(config: DomainConfig) -> DomainResult:
         print(f"Using existing inputs in {config.input_dir}")
 
         if config.download_dem and config.buildings_shp.exists():
-            from cfd_geometry.buildings.extents import dem_download_bbox_around_buildings
-            from cfd_geometry.download.dem import download_dem_opentopography
-            from cfd_geometry.download.osm import resolve_bbox
-
-            if config.dem_bbox is not None:
-                dem_bbox = config.dem_bbox
-            else:
-                dem_bbox = dem_download_bbox_around_buildings(
-                    config.buildings_shp,
-                    buffer_m=config.dem_buffer_m,
-                )
+            inputs_with_b = {**inputs, "buildings": config.buildings_shp}
+            dem_bbox = _resolve_dem_bbox(
+                config, inputs_with_b, fallback_bbox=None
+            )
             dem_path = config.dem_tif
             download_dem_opentopography(dem_bbox, dem_path)
             inputs["dem"] = dem_path

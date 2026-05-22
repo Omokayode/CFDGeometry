@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 
@@ -572,7 +573,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return args.func(args)
     except Exception as e:
+        import traceback
+
         print(f"Error: {e}", file=sys.stderr)
+        if os.environ.get("CFD_GEOMETRY_DEBUG"):
+            traceback.print_exc()
         return 1
 
 
