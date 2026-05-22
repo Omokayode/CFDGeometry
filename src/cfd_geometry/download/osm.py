@@ -7,6 +7,11 @@ from pathlib import Path
 import geopandas as gpd
 
 from cfd_geometry.download.bbox import Bbox
+from cfd_geometry.download.export import (
+    prepare_buildings_gdf,
+    prepare_highways_gdf,
+    prepare_trees_gdf,
+)
 
 BUILDING_TAGS = {"building": True}
 TREE_TAGS = {"natural": "tree"}
@@ -121,7 +126,7 @@ def _filter_geom_types(gdf: gpd.GeoDataFrame, types: set[str]) -> gpd.GeoDataFra
 
 def _save_shapefile(gdf: gpd.GeoDataFrame, path: Path) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
-    gdf.to_file(path)
+    gdf.to_file(path, driver="ESRI Shapefile")
     return len(gdf)
 
 
@@ -131,6 +136,7 @@ def download_buildings(bbox: Bbox, path: Path, *, timeout: int) -> int:
     if gdf.empty:
         print(f"Warning: no building polygons; skipping {path}")
         return 0
+    gdf = prepare_buildings_gdf(gdf)
     count = _save_shapefile(gdf, path)
     print(f"Wrote {count} buildings -> {path}")
     return count
@@ -145,6 +151,7 @@ def download_trees(bbox: Bbox, path: Path, *, timeout: int) -> int:
     if gdf.empty:
         print(f"Warning: no tree points; skipping {path}")
         return 0
+    gdf = prepare_trees_gdf(gdf)
     count = _save_shapefile(gdf, path)
     print(f"Wrote {count} trees -> {path}")
     return count
@@ -158,6 +165,7 @@ def download_highways(bbox: Bbox, path: Path, *, timeout: int) -> int:
     if gdf.empty:
         print(f"Warning: no highways; skipping {path}")
         return 0
+    gdf = prepare_highways_gdf(gdf)
     count = _save_shapefile(gdf, path)
     print(f"Wrote {count} highway features -> {path}")
     return count
