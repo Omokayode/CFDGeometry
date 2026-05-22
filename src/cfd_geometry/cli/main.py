@@ -447,8 +447,8 @@ def main(argv: list[str] | None = None) -> int:
     p_dom.add_argument(
         "--dem-buffer-m",
         type=float,
-        default=1000.0,
-        help="DEM download padding on all sides in meters (~2 km x 2 km at 1000; default: 1000)",
+        default=200.0,
+        help="DEM download padding on all sides in meters (default: 200)",
     )
     p_dom.add_argument(
         "--dem-bbox",

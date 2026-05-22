@@ -147,7 +147,7 @@ def _load_with_rasterio(
                 dst_height=dst_height,
             )
             print(f"  Reprojecting to {dst_crs} at {dst_width} x {dst_height} px")
-            elevation = np.empty((dst_height, dst_width), dtype=np.float32)
+            elevation = np.full((dst_height, dst_width), np.nan, dtype=np.float32)
             reproject(
                 source=rasterio.band(src, 1),
                 destination=elevation,
@@ -262,6 +262,66 @@ def _load_dem_alternative(tif_path: str, target_crs: str, resample_factor: float
     }
 
 
+def _valid_elevation_mask(elevation: np.ndarray) -> np.ndarray:
+    """True where elevation is a usable sample (finite, non-extreme nodata)."""
+    mask = np.isfinite(elevation)
+    if mask.any():
+        for sentinel in (-32768, -32767, -9999, 9999):
+            mask &= elevation != sentinel
+    return mask
+
+
+def _fill_invalid_elevation(elevation: np.ndarray) -> np.ndarray:
+    """Replace NaN/inf/nodata with the median of valid samples."""
+    elev = np.asarray(elevation, dtype=np.float64)
+    valid = _valid_elevation_mask(elev)
+    if not valid.any():
+        raise ValueError("DEM has no valid elevation samples")
+    fill = float(np.median(elev[valid]))
+    invalid = ~valid
+    if invalid.any():
+        n = int(invalid.sum())
+        print(f"  Filling {n} invalid DEM cell(s) with median elevation {fill:.2f} m")
+        elev = np.where(invalid, fill, elev)
+    return elev.astype(np.float32, copy=False)
+
+
+def _crop_elevation_to_valid_data(elevation_data: dict) -> dict:
+    """Shrink raster to the bounding box of valid elevation cells."""
+    elevation = elevation_data["elevation"]
+    valid = _valid_elevation_mask(elevation)
+    if not valid.any():
+        return elevation_data
+
+    rows = np.where(np.any(valid, axis=1))[0]
+    cols = np.where(np.any(valid, axis=0))[0]
+    r0, r1 = int(rows[0]), int(rows[-1])
+    c0, c1 = int(cols[0]), int(cols[-1])
+
+    nrows, ncols = elevation.shape
+    if r0 == 0 and r1 == nrows - 1 and c0 == 0 and c1 == ncols - 1:
+        return elevation_data
+
+    left, bottom, right, top = elevation_data["bounds"]
+    new_left = left + (right - left) * (c0 / ncols)
+    new_right = left + (right - left) * ((c1 + 1) / ncols)
+    new_top = top - (top - bottom) * (r0 / nrows)
+    new_bottom = top - (top - bottom) * ((r1 + 1) / nrows)
+
+    cropped = elevation[r0 : r1 + 1, c0 : c1 + 1].copy()
+    print(
+        f"  Cropped DEM to valid data: {ncols}x{nrows} -> {cropped.shape[1]}x{cropped.shape[0]} px"
+    )
+
+    elevation_data = dict(elevation_data)
+    elevation_data["elevation"] = cropped
+    elevation_data["bounds"] = (new_left, new_bottom, new_right, new_top)
+    elevation_data["shape"] = cropped.shape
+    elevation_data["height"] = cropped.shape[0]
+    elevation_data["width"] = cropped.shape[1]
+    return elevation_data
+
+
 def _attach_interpolator(elevation_data: dict) -> None:
     bounds = elevation_data["bounds"]
     elevation = elevation_data["elevation"]
@@ -270,11 +330,13 @@ def _attach_interpolator(elevation_data: dict) -> None:
     y_coords = np.linspace(bounds[3], bounds[1], rows)
     elevation_data["x_coords"] = x_coords
     elevation_data["y_coords"] = y_coords
+    valid = _valid_elevation_mask(elevation)
+    fill = float(np.median(elevation[valid])) if valid.any() else 0.0
     elevation_data["interpolator"] = RegularGridInterpolator(
         (y_coords, x_coords),
         elevation,
         bounds_error=False,
-        fill_value=np.nanmean(elevation),
+        fill_value=fill,
     )
 
 
@@ -283,13 +345,19 @@ def preprocess_elevation(
     smooth_sigma: float = 0,
     max_resolution: int | None = None,
     vertical_scale: float = 1.0,
+    *,
+    crop_to_valid: bool = True,
 ) -> dict:
     """Smooth, downsample, and scale elevation values in place."""
+    elevation_data = dict(elevation_data)
     elevation = elevation_data["elevation"].copy()
 
-    if np.any(np.isnan(elevation)):
-        mean_elevation = np.nanmean(elevation)
-        elevation = np.where(np.isnan(elevation), mean_elevation, elevation)
+    if crop_to_valid:
+        elevation_data["elevation"] = elevation
+        elevation_data = _crop_elevation_to_valid_data(elevation_data)
+        elevation = elevation_data["elevation"].copy()
+
+    elevation = _fill_invalid_elevation(elevation)
 
     if max_resolution and max(elevation.shape) > max_resolution:
         factor = max(elevation.shape) // max_resolution

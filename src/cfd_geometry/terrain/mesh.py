@@ -25,7 +25,15 @@ def create_terrain_mesh_with_offset(
     x_coords = np.linspace(bounds[0] - offset_x, bounds[2] - offset_x, cols) * scale_factor
     y_coords = np.linspace(bounds[3] - offset_y, bounds[1] - offset_y, rows) * scale_factor
     X, Y = np.meshgrid(x_coords, y_coords)
-    Z = elevation - z_offset
+    Z = np.asarray(elevation - z_offset, dtype=np.float64)
+    invalid = ~np.isfinite(Z)
+    if invalid.any():
+        fill = float(np.median(Z[~invalid])) if (~invalid).any() else 0.0
+        print(
+            f"Warning: {int(invalid.sum())} terrain grid point(s) had invalid Z; "
+            f"filled with {fill:.2f} m"
+        )
+        Z = np.where(invalid, fill, Z)
     return X, Y, Z
 
 

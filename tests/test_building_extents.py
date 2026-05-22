@@ -15,6 +15,6 @@ def test_dem_bbox_fixed_buffer(tmp_path):
     )
     gdf.to_file(shp)
 
-    dem_bbox = dem_download_bbox_around_buildings(shp, buffer_m=1000.0)
+    dem_bbox = dem_download_bbox_around_buildings(shp, buffer_m=200.0)
     assert dem_bbox.east > dem_bbox.west
     assert dem_bbox.north > dem_bbox.south

@@ -46,7 +46,7 @@ def dem_download_bbox_around_buildings(
     """
     WGS84 DEM extent: building footprint bounds + ``buffer_m`` on all sides (meters).
 
-    Default ``buffer_m`` is 1000 → about **2 km × 2 km** when footprints are small.
+    Default ``buffer_m`` is 200 m on each side beyond the building footprints.
     """
     buildings_path = Path(buildings_path)
     gdf = gpd.read_file(buildings_path)

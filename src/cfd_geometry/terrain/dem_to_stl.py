@@ -61,6 +61,11 @@ def dem_to_stl_with_offset(
         print("Terrain vertical alignment:")
         z_offset = resolve_dem_z_offset(elevation_data, offset_x, offset_y, z_reference)
 
+    if not np.isfinite(z_offset):
+        elev = elevation_data["elevation"]
+        z_offset = float(np.nanmedian(elev[np.isfinite(elev)]))
+        print(f"Warning: non-finite z_offset; using median elevation {z_offset:.2f} m")
+
     X, Y, Z = create_terrain_mesh_with_offset(
         elevation_data,
         offset_x,
@@ -97,8 +102,8 @@ def dem_to_stl_with_offset(
         "z_offset_applied": z_offset,
         "z_reference": z_reference,
         "elevation_range": {
-            "min": float(np.min(Z)),
-            "max": float(np.max(Z)),
-            "range": float(np.max(Z) - np.min(Z)),
+            "min": float(np.nanmin(Z)),
+            "max": float(np.nanmax(Z)),
+            "range": float(np.nanmax(Z) - np.nanmin(Z)),
         },
     }

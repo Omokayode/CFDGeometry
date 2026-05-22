@@ -10,5 +10,5 @@ DEFAULT_PLACE_BUFFER_M = 250.0
 DEFAULT_DEM_MAX_RESOLUTION = 800
 MAX_DEM_PIXELS = 25_000_000
 
-# DEM download: buffer around footprint or geocoded point → ~2 km × 2 km default
-DEFAULT_DEM_BUFFER_M = 1000.0
+# DEM download: buffer around footprint or geocoded point (meters, each side)
+DEFAULT_DEM_BUFFER_M = 200.0
