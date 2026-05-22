@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+from typing import Union
 
 import geopandas as gpd
 import numpy as np
@@ -16,9 +17,18 @@ from cfd_geometry.buildings.load import (
     HeightSource,
     height_for_row,
     load_buildings_gdf,
+    min_height_for_row,
+    prepare_buildings_gdf,
+    resolve_min_height_column,
 )
 from cfd_geometry.constants import DEFAULT_TARGET_CRS
-from cfd_geometry.geo.offsets import get_combined_offset, get_local_transform
+from cfd_geometry.geo.offsets import (
+    get_combined_offset,
+    get_combined_offset_from_gdfs,
+    get_local_transform,
+)
+
+BuildingsInput = Union[str, Path, gpd.GeoDataFrame]
 from cfd_geometry.mesh.normals import mesh_bounds
 from cfd_geometry.mesh.stl_io import validate_stl, write_stl_binary
 from cfd_geometry.mesh.trimesh_extrude import (
@@ -60,19 +70,21 @@ def _print_height_source_stats(gdf: gpd.GeoDataFrame) -> None:
 
 
 def extrude_buildings_to_stl(
-    shapefile: str | Path,
+    buildings: BuildingsInput,
     output_stl: str | Path,
     *,
     height_col: str | None = None,
     height_source: HeightSource = "osm",
     default_height: float = 9.0,
     ground_level: float = 0.0,
+    min_height_col: str | None = None,
     use_local_coords: bool = True,
     target_crs: str | None = None,
     auto_utm: bool = True,
     estimate_heights: bool | None = None,
     combined_offset: tuple[float, float] | None = None,
     shapefile_list: list[str] | None = None,
+    alignment_gdfs: list[gpd.GeoDataFrame] | None = None,
     ground_buffer: float | None = None,
     blockmesh_output: str | Path | None = None,
     ground_stl_output: str | Path | None = None,
@@ -81,14 +93,14 @@ def extrude_buildings_to_stl(
     """
     Convert building footprints to a binary STL for OpenFOAM.
 
+    ``buildings`` may be a shapefile path or an in-memory :class:`geopandas.GeoDataFrame`
+    (e.g. after QGIS or notebook preprocessing). For VoxCity-style tables, use
+    ``height_source='column'`` with columns ``height`` / ``min_height`` / ``id``.
+
     Uses trimesh polygon extrusion (handles non-convex footprints). Heights default
     to OSM-style attribute rules; use ``height_source='area'`` for footprint tiers.
     """
-    shapefile = str(shapefile)
     output_stl = str(output_stl)
-
-    engine = ensure_triangulation_backend()
-    print(f"Triangulation engine: {engine}")
 
     if estimate_heights is not None:
         if estimate_heights:
@@ -98,14 +110,75 @@ def extrude_buildings_to_stl(
         else:
             height_source = "none"
 
-    gdf, resolved_crs, active_height_col = load_buildings_gdf(
-        shapefile,
-        target_crs=target_crs,
-        auto_utm=auto_utm,
-        height_source=height_source,
-        height_col=height_col,
+    if isinstance(buildings, gpd.GeoDataFrame):
+        gdf, resolved_crs, active_height_col = prepare_buildings_gdf(
+            buildings,
+            target_crs=target_crs,
+            auto_utm=auto_utm,
+            height_source=height_source,
+            height_col=height_col,
+            default_height=default_height,
+        )
+        source_label = "GeoDataFrame"
+    else:
+        source_label = str(buildings)
+        gdf, resolved_crs, active_height_col = load_buildings_gdf(
+            str(buildings),
+            target_crs=target_crs,
+            auto_utm=auto_utm,
+            height_source=height_source,
+            height_col=height_col,
+            default_height=default_height,
+        )
+
+    return extrude_buildings_gdf_to_stl(
+        gdf,
+        output_stl,
+        resolved_crs=resolved_crs,
+        active_height_col=active_height_col,
         default_height=default_height,
+        ground_level=ground_level,
+        min_height_col=min_height_col,
+        use_local_coords=use_local_coords,
+        combined_offset=combined_offset,
+        shapefile_list=shapefile_list,
+        alignment_gdfs=alignment_gdfs,
+        ground_buffer=ground_buffer,
+        blockmesh_output=blockmesh_output,
+        ground_stl_output=ground_stl_output,
+        workers=workers,
+        source_label=source_label,
     )
+
+
+def extrude_buildings_gdf_to_stl(
+    gdf: gpd.GeoDataFrame,
+    output_stl: str | Path,
+    *,
+    resolved_crs: str,
+    active_height_col: str,
+    default_height: float = 9.0,
+    ground_level: float = 0.0,
+    min_height_col: str | None = None,
+    use_local_coords: bool = True,
+    combined_offset: tuple[float, float] | None = None,
+    shapefile_list: list[str] | None = None,
+    alignment_gdfs: list[gpd.GeoDataFrame] | None = None,
+    ground_buffer: float | None = None,
+    blockmesh_output: str | Path | None = None,
+    ground_stl_output: str | Path | None = None,
+    workers: int = 1,
+    source_label: str = "GeoDataFrame",
+) -> dict:
+    """Extrude an already-prepared building GeoDataFrame to STL."""
+    output_stl = str(output_stl)
+
+    engine = ensure_triangulation_backend()
+    print(f"Triangulation engine: {engine}")
+
+    active_min_col = resolve_min_height_column(gdf, min_height_col)
+    if active_min_col:
+        print(f"Using per-building base column: {active_min_col}")
 
     valid_mask = gdf.geometry.notna()
     gdf = gdf[valid_mask].copy()
@@ -131,6 +204,10 @@ def extrude_buildings_to_stl(
     if use_local_coords:
         if combined_offset is not None:
             offset_x, offset_y = combined_offset
+        elif alignment_gdfs:
+            offset_x, offset_y = get_combined_offset_from_gdfs(
+                alignment_gdfs, target_epsg
+            )
         elif shapefile_list:
             offset_x, offset_y = get_combined_offset(shapefile_list, target_epsg)
         else:
@@ -152,9 +229,14 @@ def extrude_buildings_to_stl(
             height_col=active_height_col,
             default_height=default_height,
         )
+        base_z = min_height_for_row(
+            row,
+            min_height_col=active_min_col,
+            default_ground=ground_level,
+        )
         height_stats.append(height)
         max_building_height = max(max_building_height, height)
-        jobs.append((geom, height))
+        jobs.append((geom, height, base_z))
 
     if workers > 1 and len(jobs) > 1:
         print(f"Extruding {len(jobs)} buildings with {workers} workers")
@@ -164,13 +246,13 @@ def extrude_buildings_to_stl(
                     _extrude_one_building,
                     geom,
                     height,
-                    ground_level,
+                    base_z,
                     offset_x,
                     offset_y,
                     engine,
                     use_local_coords,
                 )
-                for geom, height in jobs
+                for geom, height, base_z in jobs
             ]
             for fut in as_completed(futures):
                 tris = fut.result()
@@ -180,11 +262,11 @@ def extrude_buildings_to_stl(
                 else:
                     stats["failed"] += 1
     else:
-        for geom, height in jobs:
+        for geom, height, base_z in jobs:
             tris = _extrude_one_building(
                 geom,
                 height,
-                ground_level,
+                base_z,
                 offset_x,
                 offset_y,
                 engine,
@@ -271,7 +353,7 @@ def extrude_buildings_to_stl(
             y_min=gy_min,
             y_max=gy_max,
             z_max=domain_height,
-            source_note=shapefile,
+            source_note=source_label,
             offset_note=(
                 f"Translation offset: ({offset_x:.2f}, {offset_y:.2f}) m; CRS {resolved_crs}"
             ),

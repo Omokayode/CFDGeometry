@@ -7,7 +7,9 @@ __all__ = [
     "get_combined_offset",
     "get_local_transform",
     "extrude_buildings_to_stl",
+    "extrude_buildings_gdf_to_stl",
     "extrude_buildings_to_stl_with_dem",
+    "prepare_buildings_gdf",
     "extrude_highways_to_stl",
     "extrude_trees_to_stl",
     "extrude_trees_to_stl_with_dem",
@@ -20,6 +22,11 @@ _LAZY_EXPORTS = {
     "get_combined_offset": ("cfd_geometry.geo.offsets", "get_combined_offset"),
     "get_local_transform": ("cfd_geometry.geo.offsets", "get_local_transform"),
     "extrude_buildings_to_stl": ("cfd_geometry.buildings.extrude", "extrude_buildings_to_stl"),
+    "extrude_buildings_gdf_to_stl": (
+        "cfd_geometry.buildings.extrude",
+        "extrude_buildings_gdf_to_stl",
+    ),
+    "prepare_buildings_gdf": ("cfd_geometry.buildings.load", "prepare_buildings_gdf"),
     "extrude_buildings_to_stl_with_dem": (
         "cfd_geometry.buildings.extrude_dem",
         "extrude_buildings_to_stl_with_dem",

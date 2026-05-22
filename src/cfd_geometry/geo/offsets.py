@@ -68,6 +68,34 @@ def get_combined_offset(
     return offset_x, offset_y
 
 
+def get_combined_offset_from_gdfs(
+    gdfs: list[gpd.GeoDataFrame],
+    target_epsg: int = DEFAULT_EPSG,
+) -> tuple[float, float]:
+    """Combined bbox center from one or more in-memory GeoDataFrames."""
+    if not gdfs:
+        raise ValueError("At least one GeoDataFrame is required for offset")
+
+    frames = []
+    for i, gdf in enumerate(gdfs):
+        if gdf.crs is None:
+            raise ValueError(f"GeoDataFrame[{i}] has no CRS")
+        frame = gdf
+        if gdf.crs.to_epsg() != target_epsg:
+            frame = gdf.to_crs(epsg=target_epsg)
+        frames.append(frame[["geometry"]])
+
+    combined = gpd.GeoDataFrame(
+        pd.concat(frames, ignore_index=True),
+        crs=f"EPSG:{target_epsg}",
+    )
+    bounds = combined.total_bounds
+    offset_x = (bounds[0] + bounds[2]) / 2
+    offset_y = (bounds[1] + bounds[3]) / 2
+    print(f"Combined offset (GDF): ({offset_x:.2f}, {offset_y:.2f})")
+    return offset_x, offset_y
+
+
 def get_local_transform(gdf: gpd.GeoDataFrame) -> tuple[float, float]:
     """Center of a single GeoDataFrame's bounds."""
     bounds = gdf.total_bounds

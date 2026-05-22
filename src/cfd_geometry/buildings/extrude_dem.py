@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Union
 
+import geopandas as gpd
 from shapely.ops import transform
 
 import numpy as np
@@ -12,8 +14,15 @@ from cfd_geometry.buildings.load import (
     HeightSource,
     height_for_row,
     load_buildings_gdf,
+    prepare_buildings_gdf,
 )
-from cfd_geometry.geo.offsets import get_combined_offset, get_local_transform
+from cfd_geometry.geo.offsets import (
+    get_combined_offset,
+    get_combined_offset_from_gdfs,
+    get_local_transform,
+)
+
+BuildingsInput = Union[str, Path, gpd.GeoDataFrame]
 from cfd_geometry.mesh.normals import mesh_bounds
 from cfd_geometry.mesh.stl_io import write_stl_binary
 from cfd_geometry.mesh.trimesh_extrude import (
@@ -29,7 +38,7 @@ from cfd_geometry.raster.elevation import (
 
 
 def extrude_buildings_to_stl_with_dem(
-    shapefile: str | Path,
+    buildings: BuildingsInput,
     dem_path: str | Path,
     output_stl: str | Path,
     *,
@@ -43,12 +52,16 @@ def extrude_buildings_to_stl_with_dem(
     estimate_heights: bool | None = None,
     combined_offset: tuple[float, float] | None = None,
     shapefile_list: list[str] | None = None,
+    alignment_gdfs: list[gpd.GeoDataFrame] | None = None,
     z_reference: str = "center",
     z_offset: float | None = None,
     elevation_data: dict | None = None,
 ) -> dict:
-    """Extrude buildings with each footprint base placed on the DEM surface."""
-    shapefile = str(shapefile)
+    """
+    Extrude buildings with each footprint base placed on the DEM surface.
+
+    ``buildings`` may be a shapefile path or a :class:`geopandas.GeoDataFrame`.
+    """
     dem_path = str(dem_path)
     output_stl = str(output_stl)
 
@@ -60,14 +73,24 @@ def extrude_buildings_to_stl_with_dem(
         else:
             height_source = "none"
 
-    gdf, resolved_crs, active_height_col = load_buildings_gdf(
-        shapefile,
-        target_crs=target_crs,
-        auto_utm=auto_utm,
-        height_source=height_source,
-        height_col=height_col,
-        default_height=default_height,
-    )
+    if isinstance(buildings, gpd.GeoDataFrame):
+        gdf, resolved_crs, active_height_col = prepare_buildings_gdf(
+            buildings,
+            target_crs=target_crs,
+            auto_utm=auto_utm,
+            height_source=height_source,
+            height_col=height_col,
+            default_height=default_height,
+        )
+    else:
+        gdf, resolved_crs, active_height_col = load_buildings_gdf(
+            str(buildings),
+            target_crs=target_crs,
+            auto_utm=auto_utm,
+            height_source=height_source,
+            height_col=height_col,
+            default_height=default_height,
+        )
 
     engine = ensure_triangulation_backend()
     print(f"Triangulation engine: {engine}")
@@ -86,6 +109,10 @@ def extrude_buildings_to_stl_with_dem(
     if use_local_coords:
         if combined_offset is not None:
             offset_x, offset_y = combined_offset
+        elif alignment_gdfs:
+            offset_x, offset_y = get_combined_offset_from_gdfs(
+                alignment_gdfs, target_epsg
+            )
         elif shapefile_list:
             offset_x, offset_y = get_combined_offset(shapefile_list, target_epsg)
         else:

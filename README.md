@@ -95,16 +95,31 @@ cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 
 ## Python API
 
 ```python
+import geopandas as gpd
 from cfd_geometry import (
     get_combined_offset,
     extrude_buildings_to_stl,
+    prepare_buildings_gdf,
     dem_to_stl_with_offset,
     STLClipper,
     OptimizedRectangularBaseGenerator,
 )
 
+# From shapefile
 ox, oy = get_combined_offset(["buildings.shp", "trees.shp"])
 extrude_buildings_to_stl("buildings.shp", "buildings.stl", combined_offset=(ox, oy))
+
+# From GeoDataFrame (QGIS / notebook / VoxCity-style columns: height, min_height, id)
+gdf = gpd.read_file("buildings.shp")  # or your own GeoDataFrame
+gdf["height"] = 12.0  # per-building heights in meters
+extrude_buildings_to_stl(
+    gdf,
+    "buildings.stl",
+    height_source="column",
+    height_col="height",
+    combined_offset=(ox, oy),
+)
+
 dem_to_stl_with_offset("dem.tif", "terrain.stl", ox, oy)
 ```
 
