@@ -4,6 +4,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
+_LEGACY_BLOCKMESH_SIDECARS = (
+    "blockMeshDict_vertices.txt",
+    "blockMeshDict.vertices.txt",
+)
+
+
+def _remove_legacy_blockmesh_sidecars(output_path: Path) -> None:
+    """Drop obsolete vertex-snippet files from older releases."""
+    parent = output_path.parent
+    for name in _LEGACY_BLOCKMESH_SIDECARS:
+        sidecar = parent / name
+        if sidecar.is_file() and sidecar.resolve() != output_path.resolve():
+            sidecar.unlink()
+
 
 def _cell_counts(
     width: float,
@@ -192,6 +206,7 @@ boundary
 );
 """
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    _remove_legacy_blockmesh_sidecars(output_path)
     output_path.write_text(text, encoding="utf-8")
     print(f"blockMeshDict: {output_path}")
     info["blockmesh_dict"] = str(output_path)

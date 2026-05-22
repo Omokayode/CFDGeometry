@@ -52,6 +52,13 @@ def _resolve_canopy_raster(config: DomainConfig) -> str | None:
     return None
 
 
+def _domain_blockmesh_output(config: DomainConfig) -> Path | None:
+    """When to write blockMesh during building extrusion (not with --openfoam)."""
+    if config.export_openfoam or config.ground_buffer is None:
+        return None
+    return config.stl_dir / "blockMeshDict"
+
+
 def _export_openfoam_snippets(config: DomainConfig, result: DomainResult) -> None:
     """Write blockMeshDict + snappyHexMeshDict once at end of domain build."""
     stats = (
@@ -202,7 +209,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
             target_crs=resolved_crs,
             auto_utm=config.auto_utm,
             ground_buffer=config.ground_buffer,
-            blockmesh_output=config.stl_dir / "blockMeshDict_vertices.txt",
+            blockmesh_output=_domain_blockmesh_output(config),
             workers=config.workers,
             resolve_overlaps=config.resolve_overlaps,
             overlap_ratio_threshold=config.overlap_ratio_threshold,

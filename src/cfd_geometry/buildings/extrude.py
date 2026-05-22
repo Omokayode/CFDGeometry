@@ -349,8 +349,6 @@ def extrude_buildings_gdf_to_stl(
 
         domain_height = max(max_building_height * 6.0, 100.0)
         bm_path = Path(blockmesh_output or Path(output_stl).parent / "blockMeshDict")
-        if bm_path.suffix == ".txt":
-            bm_path = bm_path.with_name("blockMeshDict")
         bm_info = write_blockmesh_dict(
             bm_path,
             x_min=gx_min,

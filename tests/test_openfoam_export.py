@@ -6,6 +6,8 @@ from cfd_geometry.openfoam.export import export_openfoam_case
 
 def test_blockmesh_dict_does_not_write_vertices_sidecar(tmp_path):
     out = tmp_path / "blockMeshDict"
+    (tmp_path / "blockMeshDict_vertices.txt").write_text("old", encoding="utf-8")
+    (tmp_path / "blockMeshDict.vertices.txt").write_text("old", encoding="utf-8")
     write_blockmesh_dict(
         out,
         x_min=0.0,
