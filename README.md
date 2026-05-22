@@ -102,6 +102,17 @@ cfd-geometry terrain dem.tif -o terrain.stl --offset-x 424265.04 --offset-y 4765
 cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 500 720
 ```
 
+### OpenFOAM snippets (`--openfoam`)
+
+Writes `blockMeshDict`, `snappyHexMeshDict`, and `snappyHexMeshConfig.command` under the output directory (no separate `blockMeshDict_vertices.txt`).
+
+```bash
+cfd-geometry domain --osm "..." --dem --output output/ --openfoam --ground-buffer 500
+cfd-geometry buildings buildings.shp -o output/buildings.stl --openfoam --ground-buffer 500
+```
+
+Optional: `--refinement-buffer-m 10` (snappy refinement box padding), `--openfoam-cell-size 5` (blockMesh cell size).
+
 ## Notebooks
 
 | Environment | Notebook |

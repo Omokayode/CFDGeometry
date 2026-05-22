@@ -36,6 +36,7 @@ def write_domain_summary(result: DomainResult, path: str | Path | None = None) -
         "input_files": {k: str(v) for k, v in result.input_files.items()},
         "stl_files": {k: str(v) for k, v in result.stl_files.items()},
         "extrude_stats": result.extrude_stats,
+        "openfoam": result.extrude_stats.get("openfoam"),
     }
 
     out.parent.mkdir(parents=True, exist_ok=True)

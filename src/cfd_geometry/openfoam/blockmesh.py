@@ -5,6 +5,18 @@ from __future__ import annotations
 from pathlib import Path
 
 
+def _cell_counts(
+    width: float,
+    length: float,
+    height: float,
+    cell_size: float,
+) -> tuple[int, int, int]:
+    nx = max(1, int(width / cell_size))
+    ny = max(1, int(length / cell_size))
+    nz = max(1, int(height / cell_size))
+    return nx, ny, nz
+
+
 def write_blockmesh_vertices(
     output_path: str | Path,
     *,
@@ -25,9 +37,7 @@ def write_blockmesh_vertices(
     output_path = Path(output_path)
     width = x_max - x_min
     length = y_max - y_min
-    nx = max(1, int(width / cell_size))
-    ny = max(1, int(length / cell_size))
-    nz = max(1, int(z_max / cell_size))
+    nx, ny, nz = _cell_counts(width, length, z_max, cell_size)
 
     lines = [
         "// blockMeshDict vertices for OpenFOAM",
@@ -92,16 +102,18 @@ def write_blockmesh_dict(
     Adjust patch types and flow direction in your case before running blockMesh.
     """
     output_path = Path(output_path)
-    info = write_blockmesh_vertices(
-        output_path.with_suffix(".vertices.txt"),
-        x_min=x_min,
-        x_max=x_max,
-        y_min=y_min,
-        y_max=y_max,
-        z_max=z_max,
-        cell_size=cell_size,
-    )
-    nx, ny, nz = info["nx"], info["ny"], info["nz"]
+    width = x_max - x_min
+    length = y_max - y_min
+    nx, ny, nz = _cell_counts(width, length, z_max, cell_size)
+    info = {
+        "nx": nx,
+        "ny": ny,
+        "nz": nz,
+        "total_cells": nx * ny * nz,
+        "domain_width": width,
+        "domain_length": length,
+        "domain_height": z_max,
+    }
 
     text = f"""FoamFile
 {{

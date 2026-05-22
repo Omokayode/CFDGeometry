@@ -52,6 +52,36 @@ def _resolve_canopy_raster(config: DomainConfig) -> str | None:
     return None
 
 
+def _export_openfoam_snippets(config: DomainConfig, result: DomainResult) -> None:
+    """Write blockMeshDict + snappyHexMeshDict once at end of domain build."""
+    stats = (
+        result.extrude_stats.get("buildings_on_dem")
+        or result.extrude_stats.get("buildings")
+    )
+    if not stats or not stats.get("bounds"):
+        print("Warning: --openfoam skipped (no building bounds from extrusion)")
+        return
+
+    ground_buffer = config.ground_buffer if config.ground_buffer is not None else 500.0
+    from cfd_geometry.openfoam.export import export_openfoam_case
+
+    print("\n" + "=" * 70)
+    print("OPENFOAM SNIPPETS")
+    print("=" * 70)
+    of_info = export_openfoam_case(
+        config.stl_dir,
+        building_bounds=stats["bounds"],
+        max_building_height=float(
+            stats.get("max_building_height", stats["bounds"].get("z_max", 20.0))
+        ),
+        ground_buffer_m=ground_buffer,
+        stl_files=result.stl_files,
+        refinement_buffer_m=config.refinement_buffer_m,
+        cell_size=config.openfoam_cell_size,
+    )
+    result.extrude_stats["openfoam"] = of_info
+
+
 def _resolve_dem_bbox(
     config: DomainConfig,
     inputs: dict[str, Path],
@@ -337,11 +367,13 @@ def build_domain(config: DomainConfig) -> DomainResult:
     print("=" * 70)
     for name, path in result.stl_files.items():
         print(f"  {name}: {path}")
-    bm = config.stl_dir / "blockMeshDict"
-    if bm.exists():
-        print(f"  blockMesh: {bm}")
-    elif (config.stl_dir / "blockMeshDict_vertices.txt").exists():
-        print(f"  blockMesh: {config.stl_dir / 'blockMeshDict_vertices.txt'}")
+    if config.export_openfoam:
+        _export_openfoam_snippets(config, result)
+
+    for name in ("blockMeshDict", "snappyHexMeshDict", "snappyHexMeshConfig.command"):
+        p = config.stl_dir / name
+        if p.exists():
+            print(f"  openfoam: {p}")
 
     from cfd_geometry.domain.summary import write_domain_summary
     from cfd_geometry.mesh.quality import validate_domain_stls

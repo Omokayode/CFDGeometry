@@ -57,6 +57,9 @@ class DomainConfig:
     dem_buffer_m: float = DEFAULT_DEM_BUFFER_M
     dem_bbox: Bbox | None = None
     workers: int = 1
+    export_openfoam: bool = False
+    refinement_buffer_m: float = 10.0
+    openfoam_cell_size: float = 5.0
 
     input_subdir: str = "input"
     output_subdir: str = "output"

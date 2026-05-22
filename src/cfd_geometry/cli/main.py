@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 
 
 def _cmd_offset(args: argparse.Namespace) -> int:
@@ -38,7 +39,13 @@ def _cmd_buildings(args: argparse.Namespace) -> int:
 
     target_crs = None if args.auto_utm else f"EPSG:{args.epsg}"
 
-    extrude_buildings_to_stl(
+    blockmesh_out = None
+    if args.blockmesh_output:
+        blockmesh_out = args.blockmesh_output
+    elif args.ground_buffer is not None and not args.openfoam:
+        blockmesh_out = str(Path(args.output).parent / "blockMeshDict")
+
+    stats = extrude_buildings_to_stl(
         args.shapefile,
         args.output,
         height_col=args.height_column,
@@ -51,13 +58,25 @@ def _cmd_buildings(args: argparse.Namespace) -> int:
         target_crs=target_crs,
         auto_utm=args.auto_utm,
         ground_buffer=args.ground_buffer,
-        blockmesh_output=args.blockmesh_output,
+        blockmesh_output=blockmesh_out,
         ground_stl_output=args.ground_stl,
         workers=max(1, args.workers),
         resolve_overlaps=args.resolve_overlaps or False,
         complement_raster=args.complement_raster,
         simplify_tolerance=args.simplify_tolerance,
     )
+    if args.openfoam and stats.get("bounds"):
+        from cfd_geometry.openfoam.export import export_openfoam_case
+
+        export_openfoam_case(
+            Path(args.output).parent,
+            building_bounds=stats["bounds"],
+            max_building_height=float(stats.get("max_building_height", 20.0)),
+            ground_buffer_m=args.ground_buffer or 500.0,
+            stl_files={"buildings": Path(args.output)},
+            refinement_buffer_m=args.refinement_buffer_m,
+            cell_size=args.openfoam_cell_size,
+        )
     if args.validate:
         validate_stl(args.output)
     return 0
@@ -343,13 +362,20 @@ def main(argv: list[str] | None = None) -> int:
         type=float,
         default=None,
         metavar="METERS",
-        help="Padding around building bounds; also writes blockMeshDict snippet",
+        help="Padding around building bounds for blockMesh outer box",
     )
     p_b.add_argument(
         "--blockmesh-output",
         default=None,
-        help="Path for blockMeshDict_vertices.txt (default: next to STL)",
+        help="Write blockMeshDict to this path (default: blockMeshDict next to STL)",
     )
+    p_b.add_argument(
+        "--openfoam",
+        action="store_true",
+        help="Write blockMeshDict + snappyHexMeshDict",
+    )
+    p_b.add_argument("--refinement-buffer-m", type=float, default=10.0)
+    p_b.add_argument("--openfoam-cell-size", type=float, default=5.0)
     p_b.add_argument(
         "--ground-stl",
         default=None,
@@ -514,7 +540,24 @@ def main(argv: list[str] | None = None) -> int:
     p_dom.add_argument(
         "--no-ground-buffer",
         action="store_true",
-        help="Disable ground buffer / blockMeshDict export",
+        help="Disable ground buffer padding (still used for --openfoam outer box)",
+    )
+    p_dom.add_argument(
+        "--openfoam",
+        action="store_true",
+        help="Write blockMeshDict and snappyHexMeshDict under output/",
+    )
+    p_dom.add_argument(
+        "--refinement-buffer-m",
+        type=float,
+        default=10.0,
+        help="snappyHexMesh refinementBox padding around buildings (default: 10 m)",
+    )
+    p_dom.add_argument(
+        "--openfoam-cell-size",
+        type=float,
+        default=5.0,
+        help="Target blockMesh cell size in metres (default: 5)",
     )
     p_dom.add_argument(
         "--dem-max-res",

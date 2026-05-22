@@ -34,7 +34,7 @@ from cfd_geometry.mesh.trimesh_extrude import (
     ensure_triangulation_backend,
     extrude_geometry_to_triangles,
 )
-from cfd_geometry.openfoam.blockmesh import write_blockmesh_dict, write_blockmesh_vertices
+from cfd_geometry.openfoam.blockmesh import write_blockmesh_dict
 
 
 def _extrude_one_building(
@@ -348,31 +348,18 @@ def extrude_buildings_gdf_to_stl(
                 print(f"Ground STL: {ground_stl_output}")
 
         domain_height = max(max_building_height * 6.0, 100.0)
-        bm_path = blockmesh_output or str(
-            Path(output_stl).parent / "blockMeshDict_vertices.txt"
-        )
-        bm_info = write_blockmesh_vertices(
+        bm_path = Path(blockmesh_output or Path(output_stl).parent / "blockMeshDict")
+        if bm_path.suffix == ".txt":
+            bm_path = bm_path.with_name("blockMeshDict")
+        bm_info = write_blockmesh_dict(
             bm_path,
             x_min=gx_min,
             x_max=gx_max,
             y_min=gy_min,
             y_max=gy_max,
             z_max=domain_height,
-            source_note=source_label,
-            offset_note=(
-                f"Translation offset: ({offset_x:.2f}, {offset_y:.2f}) m; CRS {resolved_crs}"
-            ),
         )
-        bm_dict_path = Path(bm_path).parent / "blockMeshDict"
-        bm_info = write_blockmesh_dict(
-            bm_dict_path,
-            x_min=gx_min,
-            x_max=gx_max,
-            y_min=gy_min,
-            y_max=gy_max,
-            z_max=domain_height,
-        )
-        print(f"blockMesh snippet: {bm_path}")
+        print(f"blockMeshDict: {bm_path}")
         print(
             f"Suggested domain Z: 0 to {domain_height:.2f} m "
             f"({bm_info['nx']} x {bm_info['ny']} x {bm_info['nz']} cells @ 5 m)"
