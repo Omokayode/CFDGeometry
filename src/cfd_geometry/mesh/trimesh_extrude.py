@@ -3,7 +3,50 @@
 from __future__ import annotations
 
 import trimesh
+import trimesh.util
 from shapely.geometry import MultiPolygon, Polygon
+
+# Prefer mapbox-earcut (FSF-friendly); manifold3d is optional fallback
+_ENGINE_ORDER = ("earcut", "manifold")
+
+
+def resolve_triangulation_engine() -> str | None:
+    """Return the first installed trimesh triangulation engine name."""
+    from trimesh import creation
+
+    for name, available in creation._engines:
+        if available:
+            return name
+
+    for name in _ENGINE_ORDER:
+        if name == "earcut":
+            try:
+                import mapbox_earcut  # noqa: F401
+
+                return "earcut"
+            except ImportError:
+                continue
+        if name == "manifold":
+            try:
+                import manifold3d  # noqa: F401
+
+                return "manifold"
+            except ImportError:
+                continue
+    return None
+
+
+def ensure_triangulation_backend() -> str:
+    """Require a working triangulation backend or raise a clear install hint."""
+    engine = resolve_triangulation_engine()
+    if engine is None:
+        raise RuntimeError(
+            "No polygon triangulation backend installed (trimesh cannot extrude footprints). "
+            "Install one of:\n"
+            "  pip install mapbox-earcut\n"
+            "  pip install manifold3d"
+        )
+    return engine
 
 
 def _fix_polygon(polygon: Polygon) -> Polygon | None:
@@ -25,6 +68,7 @@ def extrude_polygon_to_mesh(
     height: float,
     *,
     ground_level: float = 0.0,
+    engine: str | None = None,
 ) -> trimesh.Trimesh | None:
     """Extrude a single footprint to a watertight mesh."""
     if height <= 0:
@@ -34,8 +78,17 @@ def extrude_polygon_to_mesh(
     if polygon is None:
         return None
 
+    if engine is None:
+        engine = ensure_triangulation_backend()
+
     try:
-        mesh = trimesh.creation.extrude_polygon(polygon, height)
+        mesh = trimesh.creation.extrude_polygon(polygon, height, engine=engine)
+    except ValueError as exc:
+        if "triangulation" in str(exc).lower() or "engine" in str(exc).lower():
+            raise RuntimeError(
+                "Polygon triangulation failed. Install: pip install mapbox-earcut"
+            ) from exc
+        return None
     except Exception:
         return None
 
@@ -68,8 +121,12 @@ def extrude_geometry_to_triangles(
     height: float,
     *,
     ground_level: float = 0.0,
+    engine: str | None = None,
 ) -> list[list[list[float]]]:
     """Extrude a Polygon or MultiPolygon and return STL-ready triangles."""
+    if engine is None:
+        engine = ensure_triangulation_backend()
+
     meshes: list[trimesh.Trimesh] = []
 
     if isinstance(geom, Polygon):
@@ -80,7 +137,9 @@ def extrude_geometry_to_triangles(
         return []
 
     for poly in polys:
-        mesh = extrude_polygon_to_mesh(poly, height, ground_level=ground_level)
+        mesh = extrude_polygon_to_mesh(
+            poly, height, ground_level=ground_level, engine=engine
+        )
         if mesh is not None:
             meshes.append(mesh)
 

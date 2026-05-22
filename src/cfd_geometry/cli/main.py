@@ -18,10 +18,13 @@ def _cmd_offset(args: argparse.Namespace) -> int:
 def _cmd_buildings(args: argparse.Namespace) -> int:
     from cfd_geometry.buildings.extrude import extrude_buildings_to_stl
     from cfd_geometry.geo.offsets import get_combined_offset, target_epsg_for_shapefiles
+    from cfd_geometry.geo.paths import filter_vector_inputs
     from cfd_geometry.mesh.stl_io import validate_stl
 
     offset = None
     shapefile_list = args.align_with or ([args.shapefile] if args.shapefile else None)
+    if shapefile_list:
+        shapefile_list = filter_vector_inputs(shapefile_list, label="--align-with")
     if shapefile_list:
         epsg = target_epsg_for_shapefiles(
             shapefile_list, target_epsg=args.epsg, auto_utm=args.auto_utm

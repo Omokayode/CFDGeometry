@@ -16,7 +16,10 @@ from cfd_geometry.buildings.load import (
 from cfd_geometry.geo.offsets import get_combined_offset, get_local_transform
 from cfd_geometry.mesh.normals import mesh_bounds
 from cfd_geometry.mesh.stl_io import write_stl_binary
-from cfd_geometry.mesh.trimesh_extrude import extrude_geometry_to_triangles
+from cfd_geometry.mesh.trimesh_extrude import (
+    ensure_triangulation_backend,
+    extrude_geometry_to_triangles,
+)
 from cfd_geometry.raster.elevation import (
     ground_elevation_for_polygon,
     load_elevation_raster,
@@ -60,6 +63,9 @@ def extrude_buildings_to_stl_with_dem(
         height_col=height_col,
         default_height=default_height,
     )
+
+    engine = ensure_triangulation_backend()
+    print(f"Triangulation engine: {engine}")
 
     elevation_data = load_elevation_raster(dem_path, resolved_crs)
 
@@ -106,7 +112,9 @@ def extrude_buildings_to_stl_with_dem(
         )
         elevation_stats.append(ground_z)
 
-        tris = extrude_geometry_to_triangles(geom, height, ground_level=ground_z)
+        tris = extrude_geometry_to_triangles(
+            geom, height, ground_level=ground_z, engine=engine
+        )
         if tris:
             all_triangles.extend(tris)
             processed += 1

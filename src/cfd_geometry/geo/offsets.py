@@ -7,6 +7,7 @@ import pandas as pd
 
 from cfd_geometry.constants import DEFAULT_EPSG
 from cfd_geometry.geo.crs import fix_shapefile_crs, resolve_target_crs
+from cfd_geometry.geo.paths import filter_vector_inputs
 
 
 def target_epsg_for_shapefiles(
@@ -19,8 +20,9 @@ def target_epsg_for_shapefiles(
     if not auto_utm:
         return target_epsg
 
+    paths = filter_vector_inputs(shapefile_paths, label="offset/UTM")
     gdfs = []
-    for path in shapefile_paths:
+    for path in paths:
         gdf = gpd.read_file(path)
         if gdf.crs is None:
             gdf = fix_shapefile_crs(path, write_back=False)
@@ -43,9 +45,10 @@ def get_combined_offset(
 
     All inputs are reprojected to ``EPSG:{target_epsg}`` before merging.
     """
+    paths = filter_vector_inputs(shapefile_paths, label="combined offset")
     all_geoms = []
 
-    for path in shapefile_paths:
+    for path in paths:
         gdf = gpd.read_file(path)
         if gdf.crs is None:
             gdf = fix_shapefile_crs(path, write_back=False)

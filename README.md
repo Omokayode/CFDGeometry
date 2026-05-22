@@ -28,6 +28,7 @@ Build layers (use the same shapefile list for `--align-with`):
 ```bash
 # OSM-style heights + auto UTM for WGS84 shapefiles (default)
 cfd-geometry buildings buildings.shp -o buildings.stl --align-with buildings.shp trees.shp
+# --align-with must be vector layers (.shp), not STL outputs
 
 # Footprint-area heights (legacy) and OpenFOAM blockMesh hints
 cfd-geometry buildings buildings.shp -o buildings.stl --height-source area --ground-buffer 500
@@ -80,4 +81,4 @@ Older standalone `.py` files at the repo root and under `legacy/` still exist fo
 ## Requirements
 
 - Python 3.9+
-- geopandas, shapely, trimesh, rasterio, numpy, scipy, pandas, pyproj
+- geopandas, shapely, trimesh, mapbox-earcut, rasterio, numpy, scipy, pandas, pyproj

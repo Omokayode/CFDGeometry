@@ -20,7 +20,10 @@ from cfd_geometry.constants import DEFAULT_TARGET_CRS
 from cfd_geometry.geo.offsets import get_combined_offset, get_local_transform
 from cfd_geometry.mesh.normals import mesh_bounds
 from cfd_geometry.mesh.stl_io import validate_stl, write_stl_binary
-from cfd_geometry.mesh.trimesh_extrude import extrude_geometry_to_triangles
+from cfd_geometry.mesh.trimesh_extrude import (
+    ensure_triangulation_backend,
+    extrude_geometry_to_triangles,
+)
 from cfd_geometry.openfoam.blockmesh import write_blockmesh_vertices
 
 
@@ -62,6 +65,9 @@ def extrude_buildings_to_stl(
     """
     shapefile = str(shapefile)
     output_stl = str(output_stl)
+
+    engine = ensure_triangulation_backend()
+    print(f"Triangulation engine: {engine}")
 
     if estimate_heights is not None:
         if estimate_heights:
@@ -132,7 +138,7 @@ def extrude_buildings_to_stl(
             geom = transform(lambda x, y: (x - offset_x, y - offset_y), geom)
 
         tris = extrude_geometry_to_triangles(
-            geom, height, ground_level=ground_level
+            geom, height, ground_level=ground_level, engine=engine
         )
         if tris:
             all_triangles.extend(tris)
@@ -141,7 +147,11 @@ def extrude_buildings_to_stl(
             stats["failed"] += 1
 
     if not all_triangles:
-        raise RuntimeError("No triangles generated from building footprints")
+        raise RuntimeError(
+            f"No triangles generated from building footprints "
+            f"({stats['failed']} failed, {stats['skipped']} skipped). "
+            "Check geometries and ensure mapbox-earcut is installed: pip install mapbox-earcut"
+        )
 
     write_stl_binary(output_stl, all_triangles, header=b"Building STL for OpenFOAM")
     bounds = mesh_bounds(all_triangles)
