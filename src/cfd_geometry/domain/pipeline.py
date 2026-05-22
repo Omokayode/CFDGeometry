@@ -296,4 +296,8 @@ def build_domain(config: DomainConfig) -> DomainResult:
     if (config.stl_dir / "blockMeshDict_vertices.txt").exists():
         print(f"  blockMesh: {config.stl_dir / 'blockMeshDict_vertices.txt'}")
 
+    from cfd_geometry.domain.summary import write_domain_summary
+
+    write_domain_summary(result)
+
     return result
