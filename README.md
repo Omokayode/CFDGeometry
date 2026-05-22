@@ -1,10 +1,10 @@
 # CFD Geometry
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb)
 
 Python package for building **STL geometry** from GIS and elevation data, aimed at **urban wind / OpenFOAM** workflows.
 
-**Try it:** [Google Colab quick start](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb) (no install) or open `notebooks/cfd_geometry_quickstart.ipynb` in VS Code after cloning. See [notebooks/README.md](notebooks/README.md).
+**Try it:** [Google Colab quick start](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) — use this GitHub link, not an old Drive copy. VS Code: `notebooks/colab_quickstart.ipynb`. See [notebooks/README.md](notebooks/README.md).
 
 ## Install
 
@@ -106,8 +106,8 @@ cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 
 
 | Launch | Link |
 |--------|------|
-| **Google Colab** | [cfd_geometry_quickstart.ipynb](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb) |
-| **VS Code / Cursor** | Clone repo → `pip install -e ".[notebook,download]"` → open `notebooks/cfd_geometry_quickstart.ipynb` |
+| **Google Colab** | [colab_quickstart.ipynb](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) |
+| **VS Code / Cursor** | Clone repo → `pip install -e ".[notebook,download]"` → open `notebooks/colab_quickstart.ipynb` |
 
 The quick-start notebook installs the package, lets you **draw the study extent** on a map, downloads OSM data, and writes sample `buildings.stl` / `trees.stl`. In Colab, the first cell installs widget deps **without upgrading ipython** (Colab pins `ipython==7.34`); `moviepy`/`decorator` resolver warnings are usually safe to ignore.
 

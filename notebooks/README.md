@@ -1,12 +1,19 @@
 # Notebooks
 
-## Quick start (recommended)
+## Colab quick start (use this link)
 
 | | |
 |---|---|
-| **Google Colab** | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb) |
-| **VS Code / Cursor** | Clone the repo, open `notebooks/cfd_geometry_quickstart.ipynb`, choose the `.venv` kernel, run all cells |
-| **GitHub in browser** | [Open notebook on GitHub](https://github.com/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb) |
+| **Google Colab** | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) |
+| **VS Code / Cursor** | Clone the repo, open `notebooks/colab_quickstart.ipynb`, `.venv` kernel |
+
+### Colab: wrong notebook?
+
+If the **second cell is a map** (not `STEP 1 — Install`), you are **not** on the current notebook:
+
+1. Do **not** open a copy from **Google Drive**.
+2. Use the Colab link above (file: `colab_quickstart.ipynb`).
+3. Check the title cell shows **NOTEBOOK_ID: `cfd-colab-v3-20250522`**.
 
 ### VS Code setup
 
@@ -18,15 +25,10 @@ python -m pip install -U pip setuptools wheel
 python -m pip install -e ".[notebook,download,dev]"
 ```
 
-If `pip install -e` fails with “requires a setup.py”, upgrade pip or use `python -m pip` as above (a minimal `setup.py` shim is also in the repo root).
-
-Then **File → Open Folder** on the repo root, open `notebooks/cfd_geometry_quickstart.ipynb`, and select the `.venv` Python interpreter when prompted.
-
 ## Other notebooks
 
 | Notebook | Purpose |
 |----------|---------|
-| `cfd_geometry_quickstart.ipynb` | Install, draw extent, download OSM, extrude STLs, **Plotly 3D preview** |
-| `select_extent.ipynb` | Minimal extent picker + download only |
-
-Colab opens notebooks from `main` on GitHub; pin a release tag in the Colab URL if you need a fixed version (`.../blob/v0.1.0/...`).
+| `colab_quickstart.ipynb` | **Main demo** — install, map, STLs, Plotly |
+| `cfd_geometry_quickstart.ipynb` | Same content as `colab_quickstart` (alias) |
+| `select_extent.ipynb` | Extent picker + install only; points to Colab quick start |
