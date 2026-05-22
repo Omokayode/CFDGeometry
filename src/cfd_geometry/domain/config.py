@@ -50,6 +50,7 @@ class DomainConfig:
     terrain_z_reference: str = "center"
     dem_buffer_m: float = DEFAULT_DEM_BUFFER_M
     dem_bbox: Bbox | None = None
+    workers: int = 1
 
     input_subdir: str = "input"
     output_subdir: str = "output"

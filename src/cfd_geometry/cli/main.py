@@ -52,6 +52,7 @@ def _cmd_buildings(args: argparse.Namespace) -> int:
         ground_buffer=args.ground_buffer,
         blockmesh_output=args.blockmesh_output,
         ground_stl_output=args.ground_stl,
+        workers=max(1, args.workers),
     )
     if args.validate:
         validate_stl(args.output)
@@ -212,6 +213,7 @@ def _cmd_domain(args: argparse.Namespace) -> int:
         dem_max_resolution=args.dem_max_res,
         dem_buffer_m=args.dem_buffer_m,
         dem_bbox=dem_bbox,
+        workers=max(1, args.workers),
     )
     build_domain(config)
     return 0
@@ -325,6 +327,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Optional flat ground plane STL path",
     )
     p_b.add_argument("--validate", action="store_true")
+    p_b.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Parallel workers for extrusion (default: 1)",
+    )
     p_b.set_defaults(func=_cmd_buildings)
 
     p_t = sub.add_parser("terrain", help="Convert DEM GeoTIFF to STL")
@@ -471,6 +479,12 @@ def main(argv: list[str] | None = None) -> int:
         type=float,
         metavar=("WEST", "SOUTH", "EAST", "NORTH"),
         help="Explicit WGS84 DEM bounds (overrides --dem-buffer-m)",
+    )
+    p_dom.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Parallel workers for building extrusion (default: 1)",
     )
     p_dom.set_defaults(func=_cmd_domain)
 

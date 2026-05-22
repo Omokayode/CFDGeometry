@@ -154,6 +154,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
             auto_utm=config.auto_utm,
             ground_buffer=config.ground_buffer,
             blockmesh_output=config.stl_dir / "blockMeshDict_vertices.txt",
+            workers=config.workers,
         )
         result.stl_files["buildings"] = out
         result.extrude_stats["buildings"] = stats
@@ -309,7 +310,10 @@ def build_domain(config: DomainConfig) -> DomainResult:
     print("=" * 70)
     for name, path in result.stl_files.items():
         print(f"  {name}: {path}")
-    if (config.stl_dir / "blockMeshDict_vertices.txt").exists():
+    bm = config.stl_dir / "blockMeshDict"
+    if bm.exists():
+        print(f"  blockMesh: {bm}")
+    elif (config.stl_dir / "blockMeshDict_vertices.txt").exists():
         print(f"  blockMesh: {config.stl_dir / 'blockMeshDict_vertices.txt'}")
 
     from cfd_geometry.domain.summary import write_domain_summary
