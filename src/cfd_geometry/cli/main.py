@@ -198,6 +198,7 @@ def _cmd_domain(args: argparse.Namespace) -> int:
         download_layers=tuple(layers),
         download_dem=args.dem,
         place_buffer_m=args.buffer_m or DEFAULT_PLACE_BUFFER_M,
+        study_buffer_m=args.study_buffer_m,
         network_timeout=args.timeout,
         build_buildings=True,
         build_trees="trees" in layers and not args.no_trees,
@@ -217,6 +218,7 @@ def _cmd_domain(args: argparse.Namespace) -> int:
 
 
 def _cmd_download(args: argparse.Namespace) -> int:
+    from cfd_geometry.constants import DEFAULT_PLACE_BUFFER_M
     from cfd_geometry.download.bbox import bbox_from_sequence
     from cfd_geometry.download.config import DownloadConfig
     from cfd_geometry.download.run import download_domain
@@ -224,6 +226,10 @@ def _cmd_download(args: argparse.Namespace) -> int:
     bbox = None
     if args.bbox:
         bbox = bbox_from_sequence(tuple(args.bbox))
+
+    dem_bbox = None
+    if args.dem_bbox:
+        dem_bbox = bbox_from_sequence(tuple(args.dem_bbox))
 
     layers = tuple(args.layers)
     if args.dem and "dem" not in layers:
@@ -236,7 +242,10 @@ def _cmd_download(args: argparse.Namespace) -> int:
         layers=layers,
         download_dem=args.dem,
         network_timeout=args.timeout,
-        place_buffer_m=args.buffer_m,
+        place_buffer_m=args.buffer_m or DEFAULT_PLACE_BUFFER_M,
+        study_buffer_m=args.study_buffer_m,
+        dem_buffer_m=args.dem_buffer_m,
+        dem_bbox=dem_bbox,
     )
     download_domain(config)
     return 0
@@ -415,6 +424,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Build terrain.stl from dem.tif (requires --dem or existing dem.tif)",
     )
     p_dom.add_argument(
+        "--study-buffer-m",
+        type=float,
+        default=None,
+        help="Set both OSM and DEM padding to the same value (overrides --buffer-m and --dem-buffer-m)",
+    )
+    p_dom.add_argument(
         "--buffer-m",
         type=float,
         default=None,
@@ -500,10 +515,29 @@ def main(argv: list[str] | None = None) -> int:
         help="OSM network timeout in seconds (default: 180)",
     )
     p_dl.add_argument(
+        "--study-buffer-m",
+        type=float,
+        default=None,
+        help="Set OSM and DEM padding to the same value (overrides --buffer-m and --dem-buffer-m)",
+    )
+    p_dl.add_argument(
         "--buffer-m",
         type=float,
-        default=250.0,
-        help="Street/point buffer in meters (~500 m x 500 m box at 250; default: 250)",
+        default=None,
+        help="Street/point buffer in meters (~500 m box at 250; default: 250)",
+    )
+    p_dl.add_argument(
+        "--dem-buffer-m",
+        type=float,
+        default=200.0,
+        help="DEM padding around buildings in meters (default: 200)",
+    )
+    p_dl.add_argument(
+        "--dem-bbox",
+        nargs=4,
+        type=float,
+        metavar=("WEST", "SOUTH", "EAST", "NORTH"),
+        help="Explicit WGS84 DEM bounds (overrides --dem-buffer-m)",
     )
     p_dl.set_defaults(func=_cmd_download)
 

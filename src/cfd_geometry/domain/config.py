@@ -32,6 +32,7 @@ class DomainConfig:
     download_layers: tuple[str, ...] = ("buildings", "trees", "highways")
     download_dem: bool = False
     place_buffer_m: float = DEFAULT_PLACE_BUFFER_M
+    study_buffer_m: float | None = None
     network_timeout: int = 180
 
     build_buildings: bool = True
@@ -59,6 +60,9 @@ class DomainConfig:
             raise ValueError("Provide either place= or bbox=")
         if self.place and self.bbox:
             raise ValueError("Provide only one of place= or bbox=")
+        if self.study_buffer_m is not None:
+            self.place_buffer_m = self.study_buffer_m
+            self.dem_buffer_m = self.study_buffer_m
 
     @property
     def input_dir(self) -> Path:
