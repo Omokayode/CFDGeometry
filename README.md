@@ -12,8 +12,11 @@ Python package for building **STL geometry** from GIS and elevation data, aimed 
 cd CFDGeometry
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+python -m pip install -U pip setuptools wheel
+python -m pip install -e ".[dev]"
 ```
+
+Use **`python -m pip`** (not bare `pip`) so you do not hit macOS system Python 2.7 / an old pip that cannot do editable installs from `pyproject.toml` alone.
 
 Optional extras:
 
@@ -106,7 +109,7 @@ cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 
 | **Google Colab** | [cfd_geometry_quickstart.ipynb](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/cfd_geometry_quickstart.ipynb) |
 | **VS Code / Cursor** | Clone repo → `pip install -e ".[notebook,download]"` → open `notebooks/cfd_geometry_quickstart.ipynb` |
 
-The quick-start notebook installs the package, lets you **draw the study extent** on a map, downloads OSM data, and writes sample `buildings.stl` / `trees.stl`. In Colab, widget support is enabled automatically via `setup_colab_widgets()`.
+The quick-start notebook installs the package, lets you **draw the study extent** on a map, downloads OSM data, and writes sample `buildings.stl` / `trees.stl`. In Colab, the first cell installs widget deps **without upgrading ipython** (Colab pins `ipython==7.34`); `moviepy`/`decorator` resolver warnings are usually safe to ignore.
 
 Minimal extent-only flow:
 
@@ -116,6 +119,15 @@ from cfd_geometry.notebook import select_extent, setup_colab_widgets
 setup_colab_widgets()  # no-op outside Colab
 sel = select_extent(place="Milwaukee, Wisconsin, USA")
 # draw rectangle → "Use this extent" → sel.bbox (WGS84, same as CLI --bbox)
+```
+
+Preview STLs in the notebook (Plotly 3D, uses trimesh to load meshes):
+
+```python
+from cfd_geometry.notebook import plot_domain_stls, plot_stl_files
+
+plot_domain_stls(result, layers=("buildings", "trees"), max_triangles=8000)
+# or: plot_stl_files({"buildings": "data/output/buildings.stl"})
 ```
 
 ## Python API

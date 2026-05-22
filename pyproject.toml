@@ -33,11 +33,12 @@ dependencies = [
 dev = ["pytest>=7.0"]
 download = ["osmnx>=1.9", "requests>=2.28"]
 gdal = ["gdal>=3.6"]
+# Avoid pinning ipython: Colab requires ipython==7.34 (google-colab).
 notebook = [
-    "ipywidgets>=8.0",
-    "ipyleaflet>=0.18",
-    "jupyterlab_widgets>=3.0",
-    "ipython>=8.0",
+    "ipywidgets>=7.6,<9",
+    "ipyleaflet>=0.17",
+    "jupyterlab_widgets>=1.0.5,<4",
+    "plotly>=5.18",
 ]
 gui = []
 

@@ -14,8 +14,11 @@
 cd CFDGeometry
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[notebook,download,dev]"
+python -m pip install -U pip setuptools wheel
+python -m pip install -e ".[notebook,download,dev]"
 ```
+
+If `pip install -e` fails with “requires a setup.py”, upgrade pip or use `python -m pip` as above (a minimal `setup.py` shim is also in the repo root).
 
 Then **File → Open Folder** on the repo root, open `notebooks/cfd_geometry_quickstart.ipynb`, and select the `.venv` Python interpreter when prompted.
 
@@ -23,7 +26,7 @@ Then **File → Open Folder** on the repo root, open `notebooks/cfd_geometry_qui
 
 | Notebook | Purpose |
 |----------|---------|
-| `cfd_geometry_quickstart.ipynb` | Install, draw extent, download OSM, extrude sample STLs |
+| `cfd_geometry_quickstart.ipynb` | Install, draw extent, download OSM, extrude STLs, **Plotly 3D preview** |
 | `select_extent.ipynb` | Minimal extent picker + download only |
 
 Colab opens notebooks from `main` on GitHub; pin a release tag in the Colab URL if you need a fixed version (`.../blob/v0.1.0/...`).
