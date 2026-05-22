@@ -48,7 +48,12 @@ def install_for_notebook(*, repo_root: Path | None = None) -> None:
             "--upgrade-strategy",
             "only-if-needed",
         )
-        _run_pip(f"{_GIT_ORIGIN}#egg=cfd-geometry[download]")
+        _run_pip(
+            "--upgrade",
+            "--force-reinstall",
+            "--no-cache-dir",
+            f"{_GIT_ORIGIN}#egg=cfd-geometry[download]",
+        )
         return
 
     if src_pkg.exists():
