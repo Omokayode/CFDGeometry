@@ -1,0 +1,66 @@
+site_name: CFD Geometry
+site_description: GIS and DEM to STL for urban wind CFD (OpenFOAM)
+site_url: https://omokayode.github.io/CFDGeometry/
+repo_url: https://github.com/Omokayode/CFDGeometry
+repo_name: Omokayode/CFDGeometry
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quick start: getting-started/quickstart.md
+  - User guide:
+      - CLI overview: guide/cli.md
+      - Domain pipeline: guide/domain.md
+      - OpenFOAM export: guide/openfoam.md
+      - Notebooks: guide/notebooks.md
+      - Height & geometry strategies: guide/strategies.md
+      - API keys & data sources: guide/data-sources.md
+  - Reference:
+      - Python API: reference/python-api.md
+      - Package layout: reference/package-layout.md
+  - Development:
+      - Build the docs: development/docs.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Omokayode/CFDGeometry

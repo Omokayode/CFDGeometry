@@ -1,8 +1,11 @@
 # CFD Geometry
 
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://omokayode.github.io/CFDGeometry/)
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb)
 
 Python package for building **STL geometry** from GIS and elevation data, aimed at **urban wind / OpenFOAM** workflows.
+
+**Docs:** [https://omokayode.github.io/CFDGeometry/](https://omokayode.github.io/CFDGeometry/) (MkDocs; also deployable on [Read the Docs](docs/development/docs.md))
 
 **Try it:** [Colab tutorial](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) · VS Code: `notebooks/cfd_geometry_quickstart.ipynb`. See [notebooks/README.md](notebooks/README.md).
 
@@ -107,9 +110,11 @@ cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 
 Writes `blockMeshDict`, `snappyHexMeshDict`, and `snappyHexMeshConfig.command` under the output directory (no separate `blockMeshDict_vertices.txt`).
 
 ```bash
-cfd-geometry domain --osm "..." --dem --output output/ --openfoam --ground-buffer 500
-cfd-geometry buildings buildings.shp -o output/buildings.stl --openfoam --ground-buffer 500
+cfd-geometry domain -o data --place "Milwaukee, Wisconsin, USA" --dem --openfoam --ground-buffer 500
+cfd-geometry buildings buildings.shp -o data/output/buildings.stl --openfoam --ground-buffer 500
 ```
+
+See the [OpenFOAM guide](https://omokayode.github.io/CFDGeometry/guide/openfoam/) for flag details (`--openfoam` is on `domain` and `buildings`, not top-level `--help`).
 
 Optional: `--refinement-buffer-m 10` (snappy refinement box padding), `--openfoam-cell-size 5` (blockMesh cell size).
 
