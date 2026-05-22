@@ -7,7 +7,6 @@ Dependencies:
     pip install rasterio numpy numpy-stl scipy pillow tifffile
 Alternative method if rasterio fails:
     pip install gdal
-Author: Claude AI
 """
 import numpy as np
 import rasterio
