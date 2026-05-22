@@ -29,6 +29,7 @@ def extrude_trees_to_stl_with_dem(
     combined_offset: tuple[float, float] | None = None,
     alignment_shapefiles: list[str] | None = None,
     default_height: float = 10.0,
+    canopy_raster: str | None = None,
     tree_config: dict | None = None,
     target_crs: str = DEFAULT_TARGET_CRS,
     z_reference: str = "center",
@@ -55,6 +56,12 @@ def extrude_trees_to_stl_with_dem(
     point_gdf = gdf[gdf.geometry.geom_type == "Point"].copy()
     if len(point_gdf) == 0:
         raise ValueError("No point geometries in shapefile")
+
+    point_gdf = assign_tree_heights(
+        point_gdf,
+        canopy_raster=canopy_raster,
+        default_height=default_height,
+    )
 
     if combined_offset is None and alignment_shapefiles:
         combined_offset = get_combined_offset(

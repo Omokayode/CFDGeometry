@@ -100,7 +100,29 @@ def prepare_buildings_gdf(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return slim_for_shapefile(gdf, BUILDING_FIELDS)
 
 
+def _report_tree_columns(gdf: gpd.GeoDataFrame) -> None:
+    """Log which optional height-related OSM tags exist before shapefile slimming."""
+    gdf = _flatten_columns(gdf)
+    checks = {
+        "height": ["height", "tree:height"],
+        "circumference": ["circumference"],
+        "diameter_crown": ["diameter_crown", "diameter:crown"],
+    }
+    found: list[str] = []
+    for label, patterns in checks.items():
+        if _find_source_column(gdf, patterns):
+            found.append(label)
+    if found:
+        print(f"  Tree OSM tags present in download: {', '.join(found)}")
+    else:
+        print(
+            "  Tree OSM tags: no height/circumference/diameter_crown in this area "
+            "(shapefile will have natural/name only; use --canopy-raster for heights)"
+        )
+
+
 def prepare_trees_gdf(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    _report_tree_columns(gdf)
     return slim_for_shapefile(gdf, TREE_FIELDS)
 
 

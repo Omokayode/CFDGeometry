@@ -151,7 +151,14 @@ def download_trees(bbox: Bbox, path: Path, *, timeout: int) -> int:
     if gdf.empty:
         print(f"Warning: no tree points; skipping {path}")
         return 0
+    raw_cols = [c for c in gdf.columns if c != "geometry"]
+    raw_preview = ", ".join(raw_cols[:12])
+    if len(raw_cols) > 12:
+        raw_preview += f", ... (+{len(raw_cols) - 12} more)"
+    print(f"  Raw OSM tree columns: {raw_preview or '(none)'}")
     gdf = prepare_trees_gdf(gdf)
+    exported = [c for c in gdf.columns if c != "geometry"]
+    print(f"  Exported tree shapefile columns: {', '.join(exported)}")
     count = _save_shapefile(gdf, path)
     print(f"Wrote {count} trees -> {path}")
     return count
