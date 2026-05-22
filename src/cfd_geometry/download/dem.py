@@ -7,8 +7,6 @@ import zipfile
 from pathlib import Path
 from urllib.parse import urlencode
 
-import requests
-
 from cfd_geometry.download.bbox import Bbox
 
 
@@ -44,6 +42,14 @@ def download_dem_opentopography(
         "outputFormat": "GTiff",
         "API_Key": key,
     }
+    try:
+        import requests
+    except ImportError as e:
+        raise ImportError(
+            "DEM download requires the 'requests' package. "
+            "Install with: pip install -e '.[download]'"
+        ) from e
+
     url = "https://portal.opentopography.org/API/globaldem?" + urlencode(params)
     print(f"Requesting DEM ({demtype}) from OpenTopography...")
     response = requests.get(url, timeout=600)

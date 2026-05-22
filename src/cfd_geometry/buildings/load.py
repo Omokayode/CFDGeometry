@@ -7,48 +7,18 @@ from pathlib import Path
 import geopandas as gpd
 import pandas as pd
 
+from cfd_geometry.buildings.columns import (
+    DEFAULT_HEIGHT_COLUMNS,
+    DEFAULT_MIN_HEIGHT_COLUMNS,
+    resolve_height_column,
+    resolve_min_height_column,
+)
 from cfd_geometry.buildings.geometry_prep import repair_building_geometries, warn_if_areas_look_like_degrees
 from cfd_geometry.buildings.overlaps import resolve_overlapping_footprints
 from cfd_geometry.geo.crs import fix_shapefile_crs, resolve_target_crs
 from cfd_geometry.sources.base import HeightAssignOptions, HeightSourceStrategy
-from cfd_geometry.sources.height import height_source_from_name
 
 HeightSource = str  # "osm" | "area" | "column" | "none" | "raster" | "composite" | "default"
-
-# Common height / base columns (VoxCity-style and OSM exports)
-DEFAULT_HEIGHT_COLUMNS = (
-    "height",
-    "Height",
-    "building_height",
-    "estimated_height",
-    "HEIGHT",
-)
-DEFAULT_MIN_HEIGHT_COLUMNS = ("min_height", "min_height_m", "base_height", "elevation")
-
-
-def resolve_height_column(
-    gdf: gpd.GeoDataFrame,
-    height_col: str | None,
-) -> str | None:
-    """Pick an explicit height column when ``height_col`` is not set."""
-    if height_col:
-        return height_col
-    for name in DEFAULT_HEIGHT_COLUMNS:
-        if name in gdf.columns:
-            return name
-    return None
-
-
-def resolve_min_height_column(
-    gdf: gpd.GeoDataFrame,
-    min_height_col: str | None,
-) -> str | None:
-    if min_height_col:
-        return min_height_col
-    for name in DEFAULT_MIN_HEIGHT_COLUMNS:
-        if name in gdf.columns:
-            return name
-    return None
 
 
 def assign_building_heights(
@@ -69,6 +39,8 @@ def assign_building_heights(
     """
     if height_strategy is not None:
         return height_strategy.apply(gdf)
+
+    from cfd_geometry.sources.height import height_source_from_name
 
     opts = height_options or HeightAssignOptions(
         default_height=default_height,

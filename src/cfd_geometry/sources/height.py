@@ -11,7 +11,7 @@ import pandas as pd
 
 from cfd_geometry.buildings.heights import _height_from_area
 from cfd_geometry.buildings.heights_osm import apply_osm_heights_to_gdf
-from cfd_geometry.buildings.load import resolve_height_column
+from cfd_geometry.buildings.columns import resolve_height_column
 from cfd_geometry.sources.base import HeightAssignOptions, HeightSourceStrategy
 
 

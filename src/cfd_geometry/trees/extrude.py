@@ -10,7 +10,6 @@ from cfd_geometry.geo.crs import fix_shapefile_crs
 from cfd_geometry.geo.offsets import get_combined_offset
 from cfd_geometry.mesh.normals import mesh_bounds
 from cfd_geometry.mesh.stl_io import write_stl_binary
-from cfd_geometry.sources.trees import tree_model_from_name
 from cfd_geometry.trees.geometry import default_tree_config
 
 import geopandas as gpd
@@ -30,6 +29,8 @@ def extrude_trees_to_stl(
     target_crs: str = DEFAULT_TARGET_CRS,
 ) -> dict:
     """Convert a point shapefile to tree STL aligned with other layers."""
+    from cfd_geometry.sources.trees import tree_model_from_name
+
     cfg = tree_config or default_tree_config()
     model = tree_model_from_name(tree_model)
     gdf = gpd.read_file(shapefile_path)

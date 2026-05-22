@@ -9,7 +9,7 @@ import pandas as pd
 from cfd_geometry.buildings.heights import _height_from_area
 from cfd_geometry.buildings.heights_osm import estimate_height_from_attributes
 from cfd_geometry.buildings.heights_raster import fill_missing_heights_from_raster
-from cfd_geometry.buildings.load import resolve_height_column
+from cfd_geometry.buildings.columns import resolve_height_column
 from cfd_geometry.sources.base import HeightAssignOptions
 from cfd_geometry.sources.height import OsmHeightSource
 

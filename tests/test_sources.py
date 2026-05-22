@@ -55,7 +55,8 @@ def test_resolve_overlaps_fast():
     a = Polygon([(0, 0), (10, 0), (10, 10), (0, 10)])
     b = Polygon([(5, 5), (15, 5), (15, 15), (5, 15)])
     gdf = gpd.GeoDataFrame({"geometry": [a, b]}, crs="EPSG:32616")
-    out, stats = resolve_overlapping_footprints(gdf, method="fast", overlap_ratio_threshold=0.3)
+    # 5×5 m overlap on 10×10 m footprints → ratio 0.25
+    out, stats = resolve_overlapping_footprints(gdf, method="fast", overlap_ratio_threshold=0.2)
     assert len(out) == 1
     assert stats["removed"] == 1
 
