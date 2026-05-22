@@ -241,6 +241,10 @@ def build_domain(config: DomainConfig) -> DomainResult:
             )
             result.stl_files["terrain"] = out
             result.extrude_stats["terrain"] = terrain_stats
+            from cfd_geometry.mesh.quality import verify_stl_finite_vertices
+
+            print("Verifying terrain mesh quality:")
+            verify_stl_finite_vertices(out, label="terrain")
 
     if config.build_trees and "trees" in inputs and dem_path:
         from cfd_geometry.trees.extrude_dem import extrude_trees_to_stl_with_dem
