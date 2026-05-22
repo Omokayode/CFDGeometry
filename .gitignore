@@ -15,6 +15,10 @@ venv/
 .vscode/
 .DS_Store
 
+# Local data and notes
+data/
+notes.md
+
 # Local outputs
 *.stl
 !examples/**/*.stl

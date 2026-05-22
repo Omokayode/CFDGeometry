@@ -26,7 +26,12 @@ cfd-geometry offset path/to/buildings.shp path/to/trees.shp
 Build layers (use the same shapefile list for `--align-with`):
 
 ```bash
+# OSM-style heights + auto UTM for WGS84 shapefiles (default)
 cfd-geometry buildings buildings.shp -o buildings.stl --align-with buildings.shp trees.shp
+
+# Footprint-area heights (legacy) and OpenFOAM blockMesh hints
+cfd-geometry buildings buildings.shp -o buildings.stl --height-source area --ground-buffer 500
+
 cfd-geometry buildings-dem buildings.shp dem.tif -o buildings.stl --align-with buildings.shp
 cfd-geometry trees trees.shp -o trees.stl --align-with buildings.shp trees.shp
 cfd-geometry trees-dem trees.shp dem.tif -o trees.stl --align-with buildings.shp
@@ -58,7 +63,8 @@ src/cfd_geometry/
 ├── geo/          # CRS repair, combined offsets
 ├── mesh/         # STL I/O, polygon extrusion
 ├── raster/       # DEM loading and elevation sampling
-├── buildings/    # Footprint extrusion (+ DEM-aware extrude_dem)
+├── buildings/    # OSM heights, trimesh extrusion (+ DEM-aware extrude_dem)
+├── openfoam/     # blockMeshDict vertex snippets
 ├── trees/        # Point trees (+ DEM-aware extrude_dem)
 ├── highways/     # Road linework extrusion
 ├── terrain/      # DEM → terrain STL
@@ -74,4 +80,4 @@ Older standalone `.py` files at the repo root and under `legacy/` still exist fo
 ## Requirements
 
 - Python 3.9+
-- geopandas, shapely, rasterio, numpy, scipy, pandas, pyproj
+- geopandas, shapely, trimesh, rasterio, numpy, scipy, pandas, pyproj

@@ -17,24 +17,38 @@ def _cmd_offset(args: argparse.Namespace) -> int:
 
 def _cmd_buildings(args: argparse.Namespace) -> int:
     from cfd_geometry.buildings.extrude import extrude_buildings_to_stl
-    from cfd_geometry.geo.offsets import get_combined_offset
+    from cfd_geometry.geo.offsets import get_combined_offset, target_epsg_for_shapefiles
     from cfd_geometry.mesh.stl_io import validate_stl
 
     offset = None
     shapefile_list = args.align_with or ([args.shapefile] if args.shapefile else None)
     if shapefile_list:
-        offset = get_combined_offset(shapefile_list, args.epsg)
+        epsg = target_epsg_for_shapefiles(
+            shapefile_list, target_epsg=args.epsg, auto_utm=args.auto_utm
+        )
+        offset = get_combined_offset(shapefile_list, epsg)
+
+    height_source = args.height_source
+    if args.no_estimate_heights and height_source == "osm":
+        height_source = "column" if args.height_column else "none"
+
+    target_crs = None if args.auto_utm else f"EPSG:{args.epsg}"
 
     extrude_buildings_to_stl(
         args.shapefile,
         args.output,
         height_col=args.height_column,
+        height_source=height_source,
         default_height=args.default_height,
         ground_level=args.ground_level,
-        estimate_heights=not args.no_estimate_heights,
+        estimate_heights=None,
         combined_offset=offset,
         shapefile_list=shapefile_list,
-        target_crs=f"EPSG:{args.epsg}",
+        target_crs=target_crs,
+        auto_utm=args.auto_utm,
+        ground_buffer=args.ground_buffer,
+        blockmesh_output=args.blockmesh_output,
+        ground_stl_output=args.ground_stl,
     )
     if args.validate:
         validate_stl(args.output)
@@ -63,7 +77,12 @@ def _cmd_trees(args: argparse.Namespace) -> int:
 
     offset = None
     if args.align_with:
-        offset = get_combined_offset(args.align_with, args.epsg)
+        from cfd_geometry.geo.offsets import target_epsg_for_shapefiles
+
+        epsg = target_epsg_for_shapefiles(
+            args.align_with, target_epsg=args.epsg, auto_utm=args.auto_utm
+        )
+        offset = get_combined_offset(args.align_with, epsg)
 
     extrude_trees_to_stl(
         args.shapefile,
@@ -80,20 +99,33 @@ def _cmd_buildings_dem(args: argparse.Namespace) -> int:
     from cfd_geometry.buildings.extrude_dem import extrude_buildings_to_stl_with_dem
     from cfd_geometry.geo.offsets import get_combined_offset
 
+    from cfd_geometry.geo.offsets import target_epsg_for_shapefiles
+
     offset = None
     align = args.align_with or [args.shapefile]
     if align:
-        offset = get_combined_offset(align, args.epsg)
+        epsg = target_epsg_for_shapefiles(
+            align, target_epsg=args.epsg, auto_utm=args.auto_utm
+        )
+        offset = get_combined_offset(align, epsg)
+
+    height_source = args.height_source
+    if args.no_estimate_heights and height_source == "osm":
+        height_source = "column" if getattr(args, "height_column", None) else "none"
+
+    target_crs = None if args.auto_utm else f"EPSG:{args.epsg}"
 
     extrude_buildings_to_stl_with_dem(
         args.shapefile,
         args.dem,
         args.output,
-        estimate_heights=not args.no_estimate_heights,
+        height_source=height_source,
+        estimate_heights=None,
         combined_offset=offset,
         shapefile_list=align,
         elevation_offset=args.elevation_offset,
-        target_crs=f"EPSG:{args.epsg}",
+        target_crs=target_crs,
+        auto_utm=args.auto_utm,
     )
     return 0
 
@@ -116,7 +148,11 @@ def _cmd_highways(args: argparse.Namespace) -> int:
     from cfd_geometry.geo.offsets import get_combined_offset
     from cfd_geometry.highways.extrude import extrude_highways_to_stl
 
-    offset = get_combined_offset(args.align_with or [args.shapefile], args.epsg)
+    from cfd_geometry.geo.offsets import target_epsg_for_shapefiles
+
+    align = args.align_with or [args.shapefile]
+    epsg = target_epsg_for_shapefiles(align, target_epsg=args.epsg, auto_utm=args.auto_utm)
+    offset = get_combined_offset(align, epsg)
     extrude_highways_to_stl(
         args.shapefile,
         args.output,
@@ -150,7 +186,13 @@ def main(argv: list[str] | None = None) -> int:
         "--epsg",
         type=int,
         default=32616,
-        help="Target EPSG code (default: 32616)",
+        help="Target EPSG when --no-auto-utm (default: 32616)",
+    )
+    parser.add_argument(
+        "--auto-utm",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Auto-select UTM zone for geographic (EPSG:4326) inputs (default: on)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -167,9 +209,36 @@ def main(argv: list[str] | None = None) -> int:
         help="Shapefiles used to compute shared offset (include buildings + trees, etc.)",
     )
     p_b.add_argument("--height-column", default=None)
-    p_b.add_argument("--default-height", type=float, default=12.0)
+    p_b.add_argument(
+        "--height-source",
+        choices=["osm", "area", "column", "none"],
+        default="osm",
+        help="Height assignment: OSM tags (default), footprint area, column, or fixed default",
+    )
+    p_b.add_argument("--default-height", type=float, default=9.0)
     p_b.add_argument("--ground-level", type=float, default=0.0)
-    p_b.add_argument("--no-estimate-heights", action="store_true")
+    p_b.add_argument(
+        "--no-estimate-heights",
+        action="store_true",
+        help="Legacy: use --height-column or --default-height only (sets source to column/none)",
+    )
+    p_b.add_argument(
+        "--ground-buffer",
+        type=float,
+        default=None,
+        metavar="METERS",
+        help="Padding around building bounds; also writes blockMeshDict snippet",
+    )
+    p_b.add_argument(
+        "--blockmesh-output",
+        default=None,
+        help="Path for blockMeshDict_vertices.txt (default: next to STL)",
+    )
+    p_b.add_argument(
+        "--ground-stl",
+        default=None,
+        help="Optional flat ground plane STL path",
+    )
     p_b.add_argument("--validate", action="store_true")
     p_b.set_defaults(func=_cmd_buildings)
 
@@ -196,6 +265,11 @@ def main(argv: list[str] | None = None) -> int:
     p_bd.add_argument("-o", "--output", required=True)
     p_bd.add_argument("--align-with", nargs="+")
     p_bd.add_argument("--elevation-offset", type=float, default=0.0)
+    p_bd.add_argument(
+        "--height-source",
+        choices=["osm", "area", "column", "none"],
+        default="osm",
+    )
     p_bd.add_argument("--no-estimate-heights", action="store_true")
     p_bd.set_defaults(func=_cmd_buildings_dem)
 
