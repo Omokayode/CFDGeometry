@@ -43,6 +43,8 @@ class DomainConfig:
     tree_default_height: float = 10.0
     dem_max_resolution: int = DEFAULT_DEM_MAX_RESOLUTION
     terrain_z_reference: str = "center"
+    dem_buffer_height_factor: float = 15.0
+    dem_min_buffer_m: float = 50.0
 
     input_subdir: str = "input"
     output_subdir: str = "output"
@@ -74,9 +76,11 @@ class DomainConfig:
     def highways_shp(self) -> Path:
         return self.input_dir / "highways.shp"
 
+    dem_filename: str = "dem.tif"
+
     @property
     def dem_tif(self) -> Path:
-        return self.input_dir / "dem.tif"
+        return self.input_dir / self.dem_filename
 
 
 @dataclass

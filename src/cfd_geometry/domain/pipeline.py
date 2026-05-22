@@ -54,13 +54,34 @@ def build_domain(config: DomainConfig) -> DomainResult:
             place=config.place,
             bbox=config.bbox,
             layers=config.download_layers,
-            download_dem=config.download_dem,
+            download_dem=False,
             place_buffer_m=config.place_buffer_m,
             network_timeout=config.network_timeout,
         )
         dl_result = download_domain(dl_config)
         result.bbox = dl_result.bbox
         inputs.update(dl_result.files)
+
+        if config.download_dem:
+            from cfd_geometry.buildings.extents import dem_download_bbox_from_buildings
+            from cfd_geometry.download.dem import download_dem_opentopography
+
+            if "buildings" not in inputs:
+                raise RuntimeError(
+                    "DEM download requires buildings layer to size terrain extent "
+                    "(15× max building height padding)."
+                )
+            dem_bbox, _, _ = dem_download_bbox_from_buildings(
+                inputs["buildings"],
+                height_source=config.height_source,
+                default_height=config.default_height,
+                buffer_height_factor=config.dem_buffer_height_factor,
+                min_buffer_m=config.dem_min_buffer_m,
+                fallback_bbox=dl_result.bbox,
+            )
+            dem_path = config.dem_tif
+            download_dem_opentopography(dem_bbox, dem_path)
+            inputs["dem"] = dem_path
     else:
         inputs = _existing_vector_inputs(config)
         if not inputs:
@@ -69,6 +90,21 @@ def build_domain(config: DomainConfig) -> DomainResult:
                 "or place buildings.shp / trees.shp there."
             )
         print(f"Using existing inputs in {config.input_dir}")
+
+        if config.download_dem and config.buildings_shp.exists():
+            from cfd_geometry.buildings.extents import dem_download_bbox_from_buildings
+            from cfd_geometry.download.dem import download_dem_opentopography
+
+            dem_bbox, _, _ = dem_download_bbox_from_buildings(
+                config.buildings_shp,
+                height_source=config.height_source,
+                default_height=config.default_height,
+                buffer_height_factor=config.dem_buffer_height_factor,
+                min_buffer_m=config.dem_min_buffer_m,
+            )
+            dem_path = config.dem_tif
+            download_dem_opentopography(dem_bbox, dem_path)
+            inputs["dem"] = dem_path
 
     result.input_files = dict(inputs)
 
