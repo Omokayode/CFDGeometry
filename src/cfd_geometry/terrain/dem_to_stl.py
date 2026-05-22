@@ -29,7 +29,12 @@ def dem_to_stl_with_offset(
 ) -> dict:
     """Convert a DEM TIFF to STL using a shared local origin offset."""
     print(f"Converting DEM to STL: {input_file} -> {output_file}")
-    elevation_data = load_elevation_raster(input_file, target_crs, build_interpolator=False)
+    elevation_data = load_elevation_raster(
+        input_file,
+        target_crs,
+        build_interpolator=False,
+        max_resolution=max_resolution,
+    )
     elevation_data = preprocess_elevation(
         elevation_data,
         smooth_sigma=smooth_sigma,

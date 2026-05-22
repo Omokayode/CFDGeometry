@@ -66,5 +66,25 @@ def download_dem_opentopography(
     else:
         output_path.write_bytes(response.content)
 
+    _validate_dem_file(output_path)
     print(f"Wrote DEM -> {output_path}")
     return output_path
+
+
+def _validate_dem_file(path: Path) -> None:
+    """Ensure downloaded DEM is a reasonable size before terrain meshing."""
+    try:
+        import rasterio
+    except ImportError:
+        return
+
+    with rasterio.open(path) as src:
+        pixels = src.width * src.height
+        print(f"  DEM raster: {src.width} x {src.height} ({pixels:,} pixels), CRS={src.crs}")
+        if pixels > 100_000_000:
+            raise RuntimeError(
+                f"DEM is too large ({src.width}x{src.height}). "
+                "Use a smaller --bbox/--buffer-m or clip dem.tif to your study area."
+            )
+        if src.width < 2 or src.height < 2:
+            raise RuntimeError(f"DEM appears invalid or empty ({src.width}x{src.height})")

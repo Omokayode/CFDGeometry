@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from cfd_geometry.constants import DEFAULT_PLACE_BUFFER_M
+from cfd_geometry.constants import DEFAULT_DEM_MAX_RESOLUTION, DEFAULT_PLACE_BUFFER_M
 from cfd_geometry.download.bbox import Bbox
 
 
@@ -41,6 +41,7 @@ class DomainConfig:
     auto_utm: bool = True
     target_crs: str | None = None
     tree_default_height: float = 10.0
+    dem_max_resolution: int = DEFAULT_DEM_MAX_RESOLUTION
 
     input_subdir: str = "input"
     output_subdir: str = "output"

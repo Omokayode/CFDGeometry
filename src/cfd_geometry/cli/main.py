@@ -203,6 +203,7 @@ def _cmd_domain(args: argparse.Namespace) -> int:
         ground_buffer=None if args.no_ground_buffer else args.ground_buffer,
         auto_utm=args.auto_utm,
         target_crs=None if args.auto_utm else f"EPSG:{args.epsg}",
+        dem_max_resolution=args.dem_max_res,
     )
     build_domain(config)
     return 0
@@ -423,6 +424,12 @@ def main(argv: list[str] | None = None) -> int:
         "--no-ground-buffer",
         action="store_true",
         help="Disable ground buffer / blockMeshDict export",
+    )
+    p_dom.add_argument(
+        "--dem-max-res",
+        type=int,
+        default=800,
+        help="Max DEM raster dimension for terrain STL (default: 800)",
     )
     p_dom.set_defaults(func=_cmd_domain)
 
