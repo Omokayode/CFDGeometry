@@ -14,6 +14,7 @@ from cfd_geometry.buildings.columns import (
     resolve_min_height_column,
 )
 from cfd_geometry.buildings.geometry_prep import repair_building_geometries, warn_if_areas_look_like_degrees
+from cfd_geometry.buildings.heights_osm import parse_height_string
 from cfd_geometry.buildings.overlaps import resolve_overlapping_footprints
 from cfd_geometry.geo.crs import fix_shapefile_crs, resolve_target_crs
 from cfd_geometry.sources.base import HeightAssignOptions, HeightSourceStrategy
@@ -183,12 +184,9 @@ def height_for_row(
 ) -> float:
     """Resolve extrusion height for one building row."""
     if height_col and height_col in row.index and pd.notna(row[height_col]):
-        try:
-            height = float(row[height_col])
-            if height > 0:
-                return height
-        except (ValueError, TypeError):
-            pass
+        height = parse_height_string(row[height_col])
+        if height and height > 0:
+            return height
     return default_height
 
 
@@ -200,8 +198,7 @@ def min_height_for_row(
 ) -> float:
     """Per-footprint base Z when a ``min_height`` (or similar) column is present."""
     if min_height_col and min_height_col in row.index and pd.notna(row[min_height_col]):
-        try:
-            return float(row[min_height_col])
-        except (ValueError, TypeError):
-            pass
+        z = parse_height_string(row[min_height_col])
+        if z is not None:
+            return z
     return default_ground

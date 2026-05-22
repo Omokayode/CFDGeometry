@@ -112,8 +112,14 @@ def parse_height_string(height_str: Any) -> float | None:
     if height <= 0:
         return None
 
-    # Bare large integers without units are often feet in US OSM exports (e.g. "150").
-    if height >= 100 and "ft" not in text and "m" not in text:
+    if re.search(r"\bft\b|feet|\bfoot\b|'", text):
+        height *= 0.3048
+    elif re.search(r"\bin\b", text) and "ft" not in text:
+        height *= 0.0254
+    elif re.search(r"\b(m|meter|metre)\b", text):
+        pass  # already meters
+    elif height >= 100:
+        # Bare large integers without units are often feet in US OSM exports (e.g. "150").
         height *= 0.3048
 
     return height

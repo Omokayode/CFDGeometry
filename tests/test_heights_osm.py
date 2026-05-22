@@ -19,6 +19,10 @@ def test_parse_height_feet_heuristic():
     assert parse_height_string("150") == pytest.approx(150 * 0.3048, rel=1e-3)
 
 
+def test_parse_height_feet_suffix():
+    assert parse_height_string("395 ft") == pytest.approx(395 * 0.3048, rel=1e-3)
+
+
 def test_parse_height_numeric():
     assert parse_height_string(12) == 12.0
 

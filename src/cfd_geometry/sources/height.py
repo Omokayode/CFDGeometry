@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from cfd_geometry.buildings.heights import _height_from_area
-from cfd_geometry.buildings.heights_osm import apply_osm_heights_to_gdf
+from cfd_geometry.buildings.heights_osm import apply_osm_heights_to_gdf, parse_height_string
 from cfd_geometry.buildings.columns import resolve_height_column
 from cfd_geometry.sources.base import HeightAssignOptions, HeightSourceStrategy
 
@@ -57,12 +57,15 @@ class ColumnHeightSource:
                 "(e.g. height, estimated_height)"
             )
         out = gdf.copy()
+        parsed = out[col].map(lambda v: parse_height_string(v) if pd.notna(v) else None)
         if "height_source" not in out.columns:
             out["height_source"] = np.where(
-                out[col].notna() & (out[col].astype(float) > 0),
+                parsed.notna() & (parsed > 0),
                 "column",
                 "default",
             )
+        if parsed.notna().any():
+            out[col] = parsed
         return out, col
 
 

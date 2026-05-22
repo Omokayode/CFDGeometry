@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from cfd_geometry.buildings.heights import _height_from_area
-from cfd_geometry.buildings.heights_osm import estimate_height_from_attributes
+from cfd_geometry.buildings.heights_osm import estimate_height_from_attributes, parse_height_string
 from cfd_geometry.buildings.heights_raster import fill_missing_heights_from_raster
 from cfd_geometry.buildings.columns import resolve_height_column
 from cfd_geometry.sources.base import HeightAssignOptions
@@ -40,12 +40,9 @@ def assign_heights_composite(
         src = "default"
 
         if col and col in row.index and pd.notna(row[col]):
-            try:
-                v = float(row[col])
-                if v > 0:
-                    h, src = v, "column"
-            except (ValueError, TypeError):
-                pass
+            v = parse_height_string(row[col])
+            if v and v > 0:
+                h, src = v, "column"
 
         if h is None:
             h, src = estimate_height_from_attributes(row, default_height=options.default_height)
@@ -80,8 +77,7 @@ def assign_heights_composite(
         out.loc[still, height_col] = options.default_height
         out.loc[still, source_col] = "default"
 
-    active = col if col and (out[col].notna() & (out[col].astype(float) > 0)).any() else height_col
-    return out, active
+    return out, height_col
 
 
 def _complement_from_gdf(
@@ -108,7 +104,9 @@ def _complement_from_gdf(
     fill = mask & joined["_comp_h"].notna()
     n = int(fill.sum())
     if n:
-        joined.loc[fill, "estimated_height"] = joined.loc[fill, "_comp_h"].astype(float)
+        joined.loc[fill, "estimated_height"] = joined.loc[fill, "_comp_h"].map(
+            lambda v: parse_height_string(v) if pd.notna(v) else None
+        )
         joined.loc[fill, "height_source"] = "gdf_complement"
         print(f"Complement: filled {n} heights from second GeoDataFrame")
 
