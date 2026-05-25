@@ -9,6 +9,10 @@ from cfd_geometry.domain.config import DomainConfig, DomainResult
 from cfd_geometry.download.bbox import Bbox
 from cfd_geometry.download.config import DownloadConfig
 from cfd_geometry.download.dem import download_dem_opentopography
+from cfd_geometry.download.dsm import (
+    download_dsm_opentopography,
+    download_dtm_opentopography,
+)
 from cfd_geometry.download.osm import resolve_bbox
 from cfd_geometry.download.run import download_domain
 from cfd_geometry.geo.offsets import get_combined_offset, target_epsg_for_shapefiles
@@ -142,13 +146,31 @@ def build_domain(config: DomainConfig) -> DomainResult:
         result.bbox = dl_result.bbox
         inputs.update(dl_result.files)
 
-        if config.download_dem:
-            dem_bbox = _resolve_dem_bbox(
+        raster_bbox = None
+        if config.download_dem or config.download_dsm or config.download_dtm:
+            raster_bbox = _resolve_dem_bbox(
                 config, inputs, fallback_bbox=dl_result.bbox
             )
+        if config.download_dem:
             dem_path = config.dem_tif
-            download_dem_opentopography(dem_bbox, dem_path)
+            download_dem_opentopography(raster_bbox, dem_path)
             inputs["dem"] = dem_path
+        if config.download_dsm:
+            dsm_path = config.dsm_tif
+            download_dsm_opentopography(
+                raster_bbox,
+                dsm_path,
+                product=config.opentopography_dsm_product,
+            )
+            inputs["dsm"] = dsm_path
+        if config.download_dtm:
+            dtm_path = config.dtm_tif
+            download_dtm_opentopography(
+                raster_bbox,
+                dtm_path,
+                product=config.opentopography_dtm_product,
+            )
+            inputs["dtm"] = dtm_path
     else:
         inputs = _existing_vector_inputs(config)
         if not inputs:
@@ -158,14 +180,36 @@ def build_domain(config: DomainConfig) -> DomainResult:
             )
         print(f"Using existing inputs in {config.input_dir}")
 
-        if config.download_dem and config.buildings_shp.exists():
+        inputs_with_b = inputs
+        if config.buildings_shp.exists():
             inputs_with_b = {**inputs, "buildings": config.buildings_shp}
-            dem_bbox = _resolve_dem_bbox(
+        raster_bbox = None
+        if (
+            config.download_dem or config.download_dsm or config.download_dtm
+        ) and config.buildings_shp.exists():
+            raster_bbox = _resolve_dem_bbox(
                 config, inputs_with_b, fallback_bbox=None
             )
+        if config.download_dem and raster_bbox is not None:
             dem_path = config.dem_tif
-            download_dem_opentopography(dem_bbox, dem_path)
+            download_dem_opentopography(raster_bbox, dem_path)
             inputs["dem"] = dem_path
+        if config.download_dsm and raster_bbox is not None:
+            dsm_path = config.dsm_tif
+            download_dsm_opentopography(
+                raster_bbox,
+                dsm_path,
+                product=config.opentopography_dsm_product,
+            )
+            inputs["dsm"] = dsm_path
+        if config.download_dtm and raster_bbox is not None:
+            dtm_path = config.dtm_tif
+            download_dtm_opentopography(
+                raster_bbox,
+                dtm_path,
+                product=config.opentopography_dtm_product,
+            )
+            inputs["dtm"] = dtm_path
 
     result.input_files = dict(inputs)
 
@@ -348,6 +392,45 @@ def build_domain(config: DomainConfig) -> DomainResult:
         )
         result.stl_files["buildings_on_dem"] = out
         result.extrude_stats["buildings_on_dem"] = stats
+
+    dsm_path = inputs.get("dsm") or (
+        config.dsm_tif if config.dsm_tif.exists() else None
+    )
+    dtm_path = inputs.get("dtm") or (
+        config.dtm_tif if config.dtm_tif.exists() else None
+    )
+    build_lidar = config.build_buildings_lidar or (
+        config.download_dsm and dsm_path is not None
+    )
+    ground_path = dem_path or dtm_path
+    if (
+        build_lidar
+        and config.build_buildings
+        and "buildings" in inputs
+        and dsm_path
+        and ground_path
+    ):
+        from cfd_geometry.buildings.extrude_lidar import (
+            extrude_buildings_to_stl_with_lidar,
+        )
+
+        out = config.stl_dir / "buildings_lidar.stl"
+        stats = extrude_buildings_to_stl_with_lidar(
+            inputs["buildings"],
+            ground_path,
+            out,
+            dsm_path=dsm_path,
+            dtm_path=dtm_path,
+            stepped_facades=config.stepped_facades,
+            combined_offset=offset,
+            shapefile_list=align_paths,
+            target_crs=resolved_crs,
+            auto_utm=config.auto_utm,
+            z_reference=config.terrain_z_reference,
+            z_offset=z_offset,
+        )
+        result.stl_files["buildings_lidar"] = out
+        result.extrude_stats["buildings_lidar"] = stats
 
     if config.build_highways and "highways" in inputs and dem_path:
         from cfd_geometry.highways.extrude_dem import extrude_highways_to_stl_with_dem

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from cfd_geometry.download.config import DownloadConfig, DownloadResult
 from cfd_geometry.download.dem import download_dem_opentopography
+from cfd_geometry.download.dsm import (
+    download_dsm_opentopography,
+    download_dtm_opentopography,
+)
 from cfd_geometry.download.osm import (
     download_buildings,
     download_highways,
@@ -56,33 +60,63 @@ def download_domain(config: DownloadConfig) -> DownloadResult:
         if result.feature_counts["highways"] > 0:
             result.files["highways"] = path
 
-    if config.download_dem or "dem" in config.layers:
+    need_raster_bbox = (
+        config.download_dem
+        or config.download_dsm
+        or config.download_dtm
+        or "dem" in config.layers
+        or "dsm" in config.layers
+        or "dtm" in config.layers
+    )
+    if need_raster_bbox:
         from cfd_geometry.buildings.extents import dem_download_bbox_around_buildings
 
         if config.dem_bbox is not None:
-            dem_bbox = config.dem_bbox
-            print("DEM extent: user-specified bbox")
+            raster_bbox = config.dem_bbox
+            print("Raster extent: user-specified bbox")
         elif "buildings" in result.files:
-            dem_bbox = dem_download_bbox_around_buildings(
+            raster_bbox = dem_download_bbox_around_buildings(
                 result.files["buildings"],
                 buffer_m=config.dem_buffer_m,
                 fallback_bbox=bbox,
             )
         else:
-            dem_bbox = _resolve_bbox(
+            raster_bbox = _resolve_bbox(
                 place=config.place,
                 bbox=config.bbox,
                 timeout=config.network_timeout,
                 place_buffer_m=config.dem_buffer_m,
             )
-        dem_path = config.output_dir / config.dem_filename
-        download_dem_opentopography(
-            dem_bbox,
-            dem_path,
-            demtype=config.opentopography_demtype,
-        )
-        result.files["dem"] = dem_path
-        result.feature_counts["dem"] = 1
+
+        if config.download_dem or "dem" in config.layers:
+            dem_path = config.output_dir / config.dem_filename
+            download_dem_opentopography(
+                raster_bbox,
+                dem_path,
+                demtype=config.opentopography_demtype,
+            )
+            result.files["dem"] = dem_path
+            result.feature_counts["dem"] = 1
+
+        if config.download_dsm or "dsm" in config.layers:
+            dsm_path = config.output_dir / config.dsm_filename
+            download_dsm_opentopography(
+                raster_bbox,
+                dsm_path,
+                product=config.opentopography_dsm_product,
+            )
+            result.files["dsm"] = dsm_path
+            result.feature_counts["dsm"] = 1
+
+        if config.download_dtm or "dtm" in config.layers:
+            dtm_path = config.output_dir / config.dtm_filename
+            download_dtm_opentopography(
+                raster_bbox,
+                dtm_path,
+                product=config.opentopography_dtm_product,
+            )
+            result.files["dtm"] = dtm_path
+            result.feature_counts["dtm"] = 1
 
     print("\nDownload summary:")
     for name, path in result.files.items():

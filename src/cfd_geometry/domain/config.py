@@ -31,6 +31,12 @@ class DomainConfig:
     run_download: bool = True
     download_layers: tuple[str, ...] = ("buildings", "trees", "highways")
     download_dem: bool = False
+    download_dsm: bool = False
+    download_dtm: bool = False
+    opentopography_dsm_product: str = "COP30"
+    opentopography_dtm_product: str = "SRTMGL1"
+    build_buildings_lidar: bool = False
+    stepped_facades: bool = False
     place_buffer_m: float = DEFAULT_PLACE_BUFFER_M
     study_buffer_m: float | None = None
     network_timeout: int = 180
@@ -73,6 +79,10 @@ class DomainConfig:
         if self.study_buffer_m is not None:
             self.place_buffer_m = self.study_buffer_m
             self.dem_buffer_m = self.study_buffer_m
+        if self.download_dsm and not self.download_dem:
+            self.download_dem = True
+        if self.download_dsm and not self.download_dtm:
+            self.download_dtm = True
 
     @property
     def input_dir(self) -> Path:
@@ -95,10 +105,20 @@ class DomainConfig:
         return self.input_dir / "highways.shp"
 
     dem_filename: str = "dem.tif"
+    dsm_filename: str = "dsm.tif"
+    dtm_filename: str = "dtm.tif"
 
     @property
     def dem_tif(self) -> Path:
         return self.input_dir / self.dem_filename
+
+    @property
+    def dsm_tif(self) -> Path:
+        return self.input_dir / self.dsm_filename
+
+    @property
+    def dtm_tif(self) -> Path:
+        return self.input_dir / self.dtm_filename
 
 
 @dataclass

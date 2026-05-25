@@ -24,7 +24,13 @@ class DownloadConfig:
     bbox: Bbox | None = None
     layers: tuple[str, ...] = DEFAULT_LAYERS
     download_dem: bool = False
+    download_dsm: bool = False
+    download_dtm: bool = False
     dem_filename: str = "dem.tif"
+    dsm_filename: str = "dsm.tif"
+    dtm_filename: str = "dtm.tif"
+    opentopography_dsm_product: str = "COP30"
+    opentopography_dtm_product: str = "SRTMGL1"
     buildings_filename: str = "buildings.shp"
     trees_filename: str = "trees.shp"
     highways_filename: str = "highways.shp"
@@ -44,7 +50,7 @@ class DownloadConfig:
         if self.study_buffer_m is not None:
             self.place_buffer_m = self.study_buffer_m
             self.dem_buffer_m = self.study_buffer_m
-        unknown = set(self.layers) - {"buildings", "trees", "highways", "dem"}
+        unknown = set(self.layers) - {"buildings", "trees", "highways", "dem", "dsm", "dtm"}
         if unknown:
             raise ValueError(f"Unknown layers: {unknown}")
 

@@ -7,6 +7,7 @@ __all__ = [
     "extrude_buildings_gdf_to_stl",
     "extrude_buildings_to_stl",
     "extrude_buildings_to_stl_with_dem",
+    "extrude_buildings_to_stl_with_lidar",
     "prepare_buildings_gdf",
     "parse_height_string",
     "process_shapefiles_to_stl",
@@ -34,6 +35,10 @@ def __getattr__(name: str):
         from cfd_geometry.buildings.extrude_dem import extrude_buildings_to_stl_with_dem
 
         return extrude_buildings_to_stl_with_dem
+    if name == "extrude_buildings_to_stl_with_lidar":
+        from cfd_geometry.buildings.extrude_lidar import extrude_buildings_to_stl_with_lidar
+
+        return extrude_buildings_to_stl_with_lidar
     if name == "prepare_buildings_gdf":
         from cfd_geometry.buildings.load import prepare_buildings_gdf
 

@@ -222,6 +222,12 @@ def _cmd_domain(args: argparse.Namespace) -> int:
         run_download=not args.no_download,
         download_layers=tuple(layers),
         download_dem=args.dem,
+        download_dsm=args.dsm,
+        download_dtm=args.dtm,
+        opentopography_dsm_product=args.dsm_product,
+        opentopography_dtm_product=args.dtm_product,
+        build_buildings_lidar=args.buildings_lidar,
+        stepped_facades=args.stepped_facades,
         place_buffer_m=args.buffer_m or DEFAULT_PLACE_BUFFER_M,
         study_buffer_m=args.study_buffer_m,
         network_timeout=args.timeout,
@@ -272,6 +278,10 @@ def _cmd_download(args: argparse.Namespace) -> int:
         bbox=bbox,
         layers=layers,
         download_dem=args.dem,
+        download_dsm=getattr(args, "dsm", False),
+        download_dtm=getattr(args, "dtm", False),
+        opentopography_dsm_product=getattr(args, "dsm_product", "COP30"),
+        opentopography_dtm_product=getattr(args, "dtm_product", "SRTMGL1"),
         network_timeout=args.timeout,
         place_buffer_m=args.buffer_m or DEFAULT_PLACE_BUFFER_M,
         study_buffer_m=args.study_buffer_m,
@@ -493,6 +503,38 @@ def main(argv: list[str] | None = None) -> int:
         help="Download DEM (OpenTopography API key) and buildings_on_dem.stl",
     )
     p_dom.add_argument(
+        "--dsm",
+        action="store_true",
+        help="Download DSM via OpenTopography (COP30 default) and buildings_lidar.stl",
+    )
+    p_dom.add_argument(
+        "--dtm",
+        action="store_true",
+        help="Also download DTM for CHM heights (pairs with --dsm; default SRTMGL1)",
+    )
+    p_dom.add_argument(
+        "--dsm-product",
+        default="COP30",
+        metavar="NAME",
+        help="OpenTopography DSM product: COP30, COP90, CA_MRDEM_DSM, USGS10m, ...",
+    )
+    p_dom.add_argument(
+        "--dtm-product",
+        default="SRTMGL1",
+        metavar="NAME",
+        help="OpenTopography DTM product for CHM (default SRTMGL1; US: USGS10m)",
+    )
+    p_dom.add_argument(
+        "--buildings-lidar",
+        action="store_true",
+        help="Build buildings_lidar.stl when dsm.tif exists (on by default with --dsm)",
+    )
+    p_dom.add_argument(
+        "--stepped-facades",
+        action="store_true",
+        help="DEM-following base ring for LiDAR building extrusion",
+    )
+    p_dom.add_argument(
         "--terrain",
         action="store_true",
         help="Build terrain.stl from dem.tif (requires --dem or existing dem.tif)",
@@ -624,6 +666,28 @@ def main(argv: list[str] | None = None) -> int:
         "--dem",
         action="store_true",
         help="Also download SRTM DEM via OpenTopography (needs OPENTOPOGRAPHY_API_KEY)",
+    )
+    p_dl.add_argument(
+        "--dsm",
+        action="store_true",
+        help="Download DSM (Copernicus COP30 by default) for LiDAR building heights",
+    )
+    p_dl.add_argument(
+        "--dtm",
+        action="store_true",
+        help="Download DTM companion raster (default SRTMGL1) for CHM heights",
+    )
+    p_dl.add_argument(
+        "--dsm-product",
+        default="COP30",
+        metavar="NAME",
+        help="OpenTopography DSM product (default COP30)",
+    )
+    p_dl.add_argument(
+        "--dtm-product",
+        default="SRTMGL1",
+        metavar="NAME",
+        help="OpenTopography DTM product when using --dtm",
     )
     p_dl.add_argument(
         "--timeout",
