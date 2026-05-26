@@ -1,8 +1,6 @@
 """Tests for OpenTopography DSM/DTM download helpers."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
 import pytest
 
 from cfd_geometry.download.bbox import Bbox
@@ -48,13 +46,15 @@ def test_bbox_area_limit_raises():
         check_bbox_area_limit(huge, "USGS1m", server="usgsdem")
 
 
-@patch("requests.get")
-def test_download_dsm_writes_geotiff(mock_get, tmp_path):
+def test_download_dsm_writes_geotiff(tmp_path):
+    pytest.importorskip("requests")
     try:
         import rasterio
         from rasterio.transform import from_origin
     except ImportError:
         pytest.skip("rasterio required")
+
+    from unittest.mock import MagicMock, patch
 
     bbox = Bbox(west=-88.0, south=43.0, east=-87.9, north=43.1)
     out = tmp_path / "dsm.tif"
@@ -80,9 +80,13 @@ def test_download_dsm_writes_geotiff(mock_get, tmp_path):
     mock_resp.raise_for_status = MagicMock()
     mock_resp.headers = {"Content-Type": "image/tiff"}
     mock_resp.content = tif_path.read_bytes()
-    mock_get.return_value = mock_resp
 
-    with patch.dict("os.environ", {"OPENTOPOGRAPHY_API_KEY": "test"}):
+    from unittest.mock import patch
+
+    with (
+        patch.dict("os.environ", {"OPENTOPOGRAPHY_API_KEY": "test"}),
+        patch("requests.get", return_value=mock_resp),
+    ):
         path = download_dsm_opentopography(bbox, out, product="COP30")
 
     assert path == out
