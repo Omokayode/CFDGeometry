@@ -16,7 +16,7 @@ python -m pip install -U pip setuptools wheel
 python -m pip install -e ".[download]"
 ```
 
-Use `python -m pip` (not bare `pip`) on macOS. Extras: `[notebook]`, `[gdal]`, `[dev]`, `[docs]` — see [Installation](https://omokayode.github.io/CFDGeometry/getting-started/installation/).
+Use `python -m pip` (not bare `pip`) to ensure you install into the active Python environment. Extras: `[notebook]`, `[gdal]`, `[dev]`, `[docs]` — see [Installation](https://omokayode.github.io/CFDGeometry/getting-started/installation/).
 
 ## Quick start
 
