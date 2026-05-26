@@ -35,6 +35,13 @@ class DomainConfig:
     download_dtm: bool = False
     opentopography_dsm_product: str = "COP30"
     opentopography_dtm_product: str = "SRTMGL1"
+    opentopography_demtype: str = "SRTMGL1"
+    use_usgs10m: bool = False
+    auto_usgs10m: bool = False
+    use_dsm_heights: bool = False
+    dsm_file: str | None = None
+    dtm_file: str | None = None
+    dem_file: str | None = None
     build_buildings_lidar: bool = False
     stepped_facades: bool = False
     place_buffer_m: float = DEFAULT_PLACE_BUFFER_M
@@ -80,10 +87,18 @@ class DomainConfig:
         if self.study_buffer_m is not None:
             self.place_buffer_m = self.study_buffer_m
             self.dem_buffer_m = self.study_buffer_m
+        if self.use_dsm_heights or self.download_dsm:
+            self.use_dsm_heights = True
         if self.download_dsm and not self.download_dem:
             self.download_dem = True
         if self.download_dsm and not self.download_dtm:
             self.download_dtm = True
+        if self.use_usgs10m:
+            from cfd_geometry.download.dsm import USGS10M_PRODUCT
+
+            self.opentopography_dsm_product = USGS10M_PRODUCT
+            self.opentopography_dtm_product = USGS10M_PRODUCT
+            self.opentopography_demtype = USGS10M_PRODUCT
 
     @property
     def input_dir(self) -> Path:

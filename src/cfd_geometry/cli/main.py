@@ -222,10 +222,17 @@ def _cmd_domain(args: argparse.Namespace) -> int:
         run_download=not args.no_download,
         download_layers=tuple(layers),
         download_dem=args.dem,
-        download_dsm=args.dsm,
+        download_dsm=args.dsm and not args.no_download,
         download_dtm=args.dtm,
+        use_dsm_heights=args.dsm,
+        use_usgs10m=args.usgs10m,
+        auto_usgs10m=args.auto_usgs10m,
         opentopography_dsm_product=args.dsm_product,
         opentopography_dtm_product=args.dtm_product,
+        opentopography_demtype=args.dem_product,
+        dsm_file=args.dsm_file,
+        dtm_file=args.dtm_file,
+        dem_file=args.dem_file,
         build_buildings_lidar=args.buildings_lidar,
         stepped_facades=args.stepped_facades,
         place_buffer_m=args.buffer_m or DEFAULT_PLACE_BUFFER_M,
@@ -280,8 +287,11 @@ def _cmd_download(args: argparse.Namespace) -> int:
         download_dem=args.dem,
         download_dsm=getattr(args, "dsm", False),
         download_dtm=getattr(args, "dtm", False),
+        use_usgs10m=getattr(args, "usgs10m", False),
+        auto_usgs10m=getattr(args, "auto_usgs10m", False),
         opentopography_dsm_product=getattr(args, "dsm_product", "COP30"),
         opentopography_dtm_product=getattr(args, "dtm_product", "SRTMGL1"),
+        opentopography_demtype=getattr(args, "dem_product", "SRTMGL1"),
         network_timeout=args.timeout,
         place_buffer_m=args.buffer_m or DEFAULT_PLACE_BUFFER_M,
         study_buffer_m=args.study_buffer_m,
@@ -513,16 +523,50 @@ def main(argv: list[str] | None = None) -> int:
         help="Also download DTM for CHM heights (pairs with --dsm; default SRTMGL1)",
     )
     p_dom.add_argument(
+        "--usgs10m",
+        action="store_true",
+        help="Use USGS 3DEP 10 m for dem/dsm/dtm downloads (CONUS, OpenTopography)",
+    )
+    p_dom.add_argument(
+        "--auto-usgs10m",
+        action="store_true",
+        help="Use USGS10m when study bbox is in CONUS, else COP30/SRTM (default products)",
+    )
+    p_dom.add_argument(
+        "--dem-product",
+        default="SRTMGL1",
+        metavar="NAME",
+        help="OpenTopography terrain DEM: SRTMGL1 (default), USGS10m, USGS30m, ...",
+    )
+    p_dom.add_argument(
         "--dsm-product",
         default="COP30",
         metavar="NAME",
-        help="OpenTopography DSM product: COP30, COP90, CA_MRDEM_DSM, USGS10m, ...",
+        help="OpenTopography DSM: COP30 (default), USGS10m (CONUS), ...",
     )
     p_dom.add_argument(
         "--dtm-product",
         default="SRTMGL1",
         metavar="NAME",
-        help="OpenTopography DTM product for CHM (default SRTMGL1; US: USGS10m)",
+        help="OpenTopography DTM for CHM: SRTMGL1 (default), USGS10m, ...",
+    )
+    p_dom.add_argument(
+        "--dsm-file",
+        default=None,
+        metavar="PATH",
+        help="Upload: copy GeoTIFF to input/dsm.tif (skip download if present)",
+    )
+    p_dom.add_argument(
+        "--dtm-file",
+        default=None,
+        metavar="PATH",
+        help="Upload: copy GeoTIFF to input/dtm.tif",
+    )
+    p_dom.add_argument(
+        "--dem-file",
+        default=None,
+        metavar="PATH",
+        help="Upload: copy GeoTIFF to input/dem.tif",
     )
     p_dom.add_argument(
         "--buildings-lidar",
@@ -676,6 +720,22 @@ def main(argv: list[str] | None = None) -> int:
         "--dtm",
         action="store_true",
         help="Download DTM companion raster (default SRTMGL1) for CHM heights",
+    )
+    p_dl.add_argument(
+        "--usgs10m",
+        action="store_true",
+        help="Use USGS 3DEP 10 m for dem/dsm/dtm (CONUS)",
+    )
+    p_dl.add_argument(
+        "--auto-usgs10m",
+        action="store_true",
+        help="Pick USGS10m in CONUS, else global defaults",
+    )
+    p_dl.add_argument(
+        "--dem-product",
+        default="SRTMGL1",
+        metavar="NAME",
+        help="Terrain DEM product (default SRTMGL1)",
     )
     p_dl.add_argument(
         "--dsm-product",

@@ -39,6 +39,10 @@ USGS_DTM_PRODUCTS = frozenset({"USGS30M", "USGS10M", "USGS1M"})
 
 DEFAULT_DSM_PRODUCT = "COP30"
 DEFAULT_DTM_PRODUCT = "SRTMGL1"
+USGS10M_PRODUCT = "USGS10m"
+
+# Rough CONUS bounds for auto USGS 3DEP selection (WGS84).
+CONUS_BBOX = Bbox(west=-125.0, south=24.0, east=-66.0, north=50.0)
 
 
 def normalize_product(name: str) -> str:
@@ -63,6 +67,41 @@ def validate_dsm_product(product: str) -> str:
         f"Unknown DSM product {product!r}. "
         f"Global DSM: {', '.join(sorted(GLOBAL_DSM_PRODUCTS))}. "
         f"US (3DEP, coarser surface): {', '.join(sorted(USGS_DTM_PRODUCTS))}."
+    )
+
+
+def is_conus_bbox(bbox: Bbox) -> bool:
+    """True if the bbox lies mostly inside the contiguous U.S."""
+    return (
+        bbox.west >= CONUS_BBOX.west
+        and bbox.east <= CONUS_BBOX.east
+        and bbox.south >= CONUS_BBOX.south
+        and bbox.north <= CONUS_BBOX.north
+    )
+
+
+def resolve_raster_products(
+    bbox: Bbox | None,
+    *,
+    dsm_product: str = DEFAULT_DSM_PRODUCT,
+    dtm_product: str = DEFAULT_DTM_PRODUCT,
+    dem_product: str = "SRTMGL1",
+    use_usgs10m: bool = False,
+    auto_usgs10m: bool = False,
+) -> tuple[str, str, str]:
+    """
+    Pick OpenTopography products for DSM, DTM, and terrain DEM.
+
+    ``use_usgs10m`` forces USGS 3DEP 10 m (CONUS, ≤ ~25 km² per request).
+    ``auto_usgs10m`` uses USGS10m when ``bbox`` is inside CONUS, else global defaults.
+    """
+    if use_usgs10m or (auto_usgs10m and bbox is not None and is_conus_bbox(bbox)):
+        print("Raster products: USGS 3DEP 10 m (CONUS)")
+        return USGS10M_PRODUCT, USGS10M_PRODUCT, USGS10M_PRODUCT
+    return (
+        normalize_product(dsm_product),
+        normalize_product(dtm_product),
+        normalize_product(dem_product),
     )
 
 

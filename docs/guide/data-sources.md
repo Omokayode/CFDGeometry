@@ -37,6 +37,30 @@ cfd-geometry download -o data/input --place "Milwaukee, Wisconsin, USA" --dsm --
 cfd-geometry domain -o data --place "Milwaukee, Wisconsin, USA" --dsm --dem --terrain
 ```
 
+**U.S. 10 m (USGS 3DEP via OpenTopography):**
+
+```bash
+# Force 10 m for dem + dsm + dtm (study area must be ≤ ~25 km²)
+cfd-geometry domain -o data --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA" \
+  --dsm --dem --usgs10m
+
+# Or auto-pick USGS10m when the bbox is in the lower 48
+cfd-geometry domain -o data --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA" \
+  --dsm --dem --auto-usgs10m
+
+# Manual product names (same API)
+cfd-geometry domain -o data --place "..." --dsm --dem \
+  --dsm-product USGS10m --dtm-product USGS10m --dem-product USGS10m
+```
+
+**Upload your own GeoTIFFs** (skip OpenTopography fetch if files already exist):
+
+```bash
+cfd-geometry domain -o data --place "..." --no-download --dsm --dem \
+  --dem-file ~/data/my_dem.tif --dsm-file ~/data/my_dsm.tif --dtm-file ~/data/my_dtm.tif
+# Or copy dem.tif / dsm.tif / dtm.tif into data/input/ and use --no-download --dsm --dem
+```
+
 | Flag | Output | Notes |
 |------|--------|--------|
 | `--dsm` | `dsm.tif` | Surface model (buildings + vegetation) |

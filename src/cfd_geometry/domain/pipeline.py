@@ -117,6 +117,48 @@ def _resolve_dem_bbox(
     )
 
 
+def _stage_user_rasters(config: DomainConfig) -> None:
+    """Copy user-supplied GeoTIFFs into ``input/`` (upload workflow)."""
+    import shutil
+
+    pairs = (
+        (config.dem_file, config.dem_tif),
+        (config.dsm_file, config.dsm_tif),
+        (config.dtm_file, config.dtm_tif),
+    )
+    for src, dest in pairs:
+        if not src:
+            continue
+        path = Path(src)
+        if not path.is_absolute():
+            local = config.input_dir / path
+            if local.exists():
+                path = local
+        if not path.exists():
+            print(f"Warning: raster not found, skipping: {path}")
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if path.resolve() != dest.resolve():
+            shutil.copy2(path, dest)
+        print(f"Using uploaded raster -> {dest}")
+
+
+def _resolved_raster_products(
+    config: DomainConfig,
+    raster_bbox: Bbox | None,
+) -> tuple[str, str, str]:
+    from cfd_geometry.download.dsm import resolve_raster_products
+
+    return resolve_raster_products(
+        raster_bbox,
+        dsm_product=config.opentopography_dsm_product,
+        dtm_product=config.opentopography_dtm_product,
+        dem_product=config.opentopography_demtype,
+        use_usgs10m=config.use_usgs10m,
+        auto_usgs10m=config.auto_usgs10m,
+    )
+
+
 def build_domain(config: DomainConfig) -> DomainResult:
     """
     Download OSM inputs (optional) and extrude aligned STL layers.
@@ -125,6 +167,7 @@ def build_domain(config: DomainConfig) -> DomainResult:
     """
     config.input_dir.mkdir(parents=True, exist_ok=True)
     config.stl_dir.mkdir(parents=True, exist_ok=True)
+    _stage_user_rasters(config)
 
     result = DomainResult(config=config)
     inputs: dict[str, Path] = {}
@@ -151,26 +194,37 @@ def build_domain(config: DomainConfig) -> DomainResult:
             raster_bbox = _resolve_dem_bbox(
                 config, inputs, fallback_bbox=dl_result.bbox
             )
-        if config.download_dem:
+        dsm_product, dtm_product, dem_product = _resolved_raster_products(
+            config, raster_bbox
+        )
+        if config.download_dem and not config.dem_tif.exists():
             dem_path = config.dem_tif
-            download_dem_opentopography(raster_bbox, dem_path)
+            download_dem_opentopography(
+                raster_bbox, dem_path, demtype=dem_product
+            )
             inputs["dem"] = dem_path
-        if config.download_dsm:
+        elif config.dem_tif.exists():
+            inputs["dem"] = config.dem_tif
+        if config.download_dsm and not config.dsm_tif.exists():
             dsm_path = config.dsm_tif
             download_dsm_opentopography(
                 raster_bbox,
                 dsm_path,
-                product=config.opentopography_dsm_product,
+                product=dsm_product,
             )
             inputs["dsm"] = dsm_path
-        if config.download_dtm:
+        elif config.dsm_tif.exists():
+            inputs["dsm"] = config.dsm_tif
+        if config.download_dtm and not config.dtm_tif.exists():
             dtm_path = config.dtm_tif
             download_dtm_opentopography(
                 raster_bbox,
                 dtm_path,
-                product=config.opentopography_dtm_product,
+                product=dtm_product,
             )
             inputs["dtm"] = dtm_path
+        elif config.dtm_tif.exists():
+            inputs["dtm"] = config.dtm_tif
 
         if config.clip_rasters_to_dem and raster_bbox is not None:
             from cfd_geometry.raster.clip import clip_rasters_to_dem
@@ -198,26 +252,37 @@ def build_domain(config: DomainConfig) -> DomainResult:
             raster_bbox = _resolve_dem_bbox(
                 config, inputs_with_b, fallback_bbox=None
             )
-        if config.download_dem and raster_bbox is not None:
+        dsm_product, dtm_product, dem_product = _resolved_raster_products(
+            config, raster_bbox
+        )
+        if config.download_dem and raster_bbox is not None and not config.dem_tif.exists():
             dem_path = config.dem_tif
-            download_dem_opentopography(raster_bbox, dem_path)
+            download_dem_opentopography(
+                raster_bbox, dem_path, demtype=dem_product
+            )
             inputs["dem"] = dem_path
-        if config.download_dsm and raster_bbox is not None:
+        elif config.dem_tif.exists():
+            inputs["dem"] = config.dem_tif
+        if config.download_dsm and raster_bbox is not None and not config.dsm_tif.exists():
             dsm_path = config.dsm_tif
             download_dsm_opentopography(
                 raster_bbox,
                 dsm_path,
-                product=config.opentopography_dsm_product,
+                product=dsm_product,
             )
             inputs["dsm"] = dsm_path
-        if config.download_dtm and raster_bbox is not None:
+        elif config.dsm_tif.exists():
+            inputs["dsm"] = config.dsm_tif
+        if config.download_dtm and raster_bbox is not None and not config.dtm_tif.exists():
             dtm_path = config.dtm_tif
             download_dtm_opentopography(
                 raster_bbox,
                 dtm_path,
-                product=config.opentopography_dtm_product,
+                product=dtm_product,
             )
             inputs["dtm"] = dtm_path
+        elif config.dtm_tif.exists():
+            inputs["dtm"] = config.dtm_tif
 
         if config.clip_rasters_to_dem and raster_bbox is not None:
             from cfd_geometry.raster.clip import clip_rasters_to_dem
@@ -415,8 +480,10 @@ def build_domain(config: DomainConfig) -> DomainResult:
     dtm_path = inputs.get("dtm") or (
         config.dtm_tif if config.dtm_tif.exists() else None
     )
-    build_lidar = config.build_buildings_lidar or (
-        config.download_dsm and dsm_path is not None
+    build_lidar = (
+        config.build_buildings_lidar
+        or config.use_dsm_heights
+        or (config.download_dsm and dsm_path is not None)
     )
     ground_path = dem_path or dtm_path
     if (

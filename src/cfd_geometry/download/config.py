@@ -32,6 +32,8 @@ class DownloadConfig:
     opentopography_dsm_product: str = "COP30"
     opentopography_dtm_product: str = "SRTMGL1"
     clip_rasters_to_dem: bool = True
+    use_usgs10m: bool = False
+    auto_usgs10m: bool = False
     buildings_filename: str = "buildings.shp"
     trees_filename: str = "trees.shp"
     highways_filename: str = "highways.shp"

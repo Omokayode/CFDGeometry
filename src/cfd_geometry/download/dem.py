@@ -10,6 +10,7 @@ from cfd_geometry.download.opentopography import (
     check_bbox_area_limit,
     fetch_opentopography_geotiff,
     get_opentopography_api_key,
+    resolve_opentopography_server,
 )
 
 
@@ -29,10 +30,9 @@ def download_dem_opentopography(
     """
     key = get_opentopography_api_key(api_key)
     demtype = demtype.strip()
-    check_bbox_area_limit(bbox, demtype, server="globaldem")
-    url = build_opentopography_url(
-        "globaldem", bbox, product=demtype, api_key=key
-    )
+    server = resolve_opentopography_server(demtype)
+    check_bbox_area_limit(bbox, demtype, server=server)
+    url = build_opentopography_url(server, bbox, product=demtype, api_key=key)
     return fetch_opentopography_geotiff(
         url,
         Path(output_path),

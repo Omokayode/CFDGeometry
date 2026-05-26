@@ -88,33 +88,47 @@ def download_domain(config: DownloadConfig) -> DownloadResult:
                 place_buffer_m=config.dem_buffer_m,
             )
 
+        from cfd_geometry.download.dsm import resolve_raster_products
+
+        dsm_product, dtm_product, dem_product = resolve_raster_products(
+            raster_bbox,
+            dsm_product=config.opentopography_dsm_product,
+            dtm_product=config.opentopography_dtm_product,
+            dem_product=config.opentopography_demtype,
+            use_usgs10m=config.use_usgs10m,
+            auto_usgs10m=config.auto_usgs10m,
+        )
+
         if config.download_dem or "dem" in config.layers:
             dem_path = config.output_dir / config.dem_filename
-            download_dem_opentopography(
-                raster_bbox,
-                dem_path,
-                demtype=config.opentopography_demtype,
-            )
+            if not dem_path.exists():
+                download_dem_opentopography(
+                    raster_bbox,
+                    dem_path,
+                    demtype=dem_product,
+                )
             result.files["dem"] = dem_path
             result.feature_counts["dem"] = 1
 
         if config.download_dsm or "dsm" in config.layers:
             dsm_path = config.output_dir / config.dsm_filename
-            download_dsm_opentopography(
-                raster_bbox,
-                dsm_path,
-                product=config.opentopography_dsm_product,
-            )
+            if not dsm_path.exists():
+                download_dsm_opentopography(
+                    raster_bbox,
+                    dsm_path,
+                    product=dsm_product,
+                )
             result.files["dsm"] = dsm_path
             result.feature_counts["dsm"] = 1
 
         if config.download_dtm or "dtm" in config.layers:
             dtm_path = config.output_dir / config.dtm_filename
-            download_dtm_opentopography(
-                raster_bbox,
-                dtm_path,
-                product=config.opentopography_dtm_product,
-            )
+            if not dtm_path.exists():
+                download_dtm_opentopography(
+                    raster_bbox,
+                    dtm_path,
+                    product=dtm_product,
+                )
             result.files["dtm"] = dtm_path
             result.feature_counts["dtm"] = 1
 
