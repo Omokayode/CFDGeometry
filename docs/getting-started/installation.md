@@ -3,7 +3,7 @@
 ## Requirements
 
 - Python **3.9+**
-- macOS / Linux / Windows (WSL recommended on Windows for geospatial stacks)
+- Linux / macOS / Windows (WSL is often recommended on Windows for geospatial stacks)
 
 Core dependencies: geopandas, shapely, trimesh, rasterio, numpy, scipy, pandas, pyproj.
 
@@ -17,7 +17,7 @@ python -m pip install -U pip setuptools wheel
 python -m pip install -e ".[dev]"
 ```
 
-Use **`python -m pip`**, not bare `pip`, so macOS does not pick up system Python 2.7.
+Use **`python -m pip`**, not bare `pip`, so you install into the active Python environment.
 
 ## Optional extras
 

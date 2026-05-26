@@ -54,6 +54,6 @@ plot_domain_stls(result, layers=("buildings", "trees"), max_triangles=8000)
 
 | Problem | Fix |
 |---------|-----|
-| `No module named cfd_geometry.domain` | Open repo root; `pip install -e .`; correct kernel |
-| Old `plot_domain_stls` / Plotly errors | Reinstall editable package; restart kernel |
-| Colab numpy / FPE errors | Use Colab notebook install cell (`--no-deps`) |
+| Import/module errors | Open the repo **root**, reinstall editable (`pip install -e .`), and select the correct kernel |
+| Plot/preview not updating | Reinstall editable package and restart/reload the notebook kernel |
+| Environment mismatch (local vs Colab) | Use the notebook’s provided install cell (e.g. `--no-deps` on Colab) and restart the runtime |
