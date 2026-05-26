@@ -74,6 +74,11 @@ def load_elevation_raster(
     target_resolution_m: float | None = 5.0,
 ) -> dict:
     """Load a DEM GeoTIFF, reproject if needed, and optionally build an interpolator."""
+    if not isinstance(target_crs, str):
+        raise TypeError(
+            f"target_crs must be a CRS string (e.g. 'EPSG:32616'), got {target_crs!r}. "
+            "Use load_elevation_raster(path, crs, build_interpolator=True)."
+        )
     print(f"Loading elevation raster: {tif_path}")
     try:
         data = _load_with_rasterio(

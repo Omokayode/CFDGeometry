@@ -23,6 +23,13 @@ def _flat_elevation_data(z: float = 0.0, size: int = 5) -> dict:
     return data
 
 
+def test_load_elevation_raster_rejects_non_string_crs():
+    from cfd_geometry.raster.elevation import load_elevation_raster
+
+    with pytest.raises(TypeError, match="target_crs"):
+        load_elevation_raster("/nonexistent.tif", True, build_interpolator=False)
+
+
 def test_building_height_from_lidar_chm():
     ground = _flat_elevation_data(10.0)
     surface = _flat_elevation_data(25.0)

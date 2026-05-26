@@ -89,7 +89,8 @@ def assign_tree_heights(
     work = out
     if canopy_raster:
         raster_path = str(canopy_raster)
-        raster_data = load_elevation_raster(raster_path, build_interpolator=True)
+        crs = str(out.crs) if out.crs else "EPSG:4326"
+        raster_data = load_elevation_raster(raster_path, crs, build_interpolator=True)
         if out.crs and str(out.crs) != str(raster_data.get("crs", out.crs)):
             work = out.to_crs(raster_data["crs"])
 

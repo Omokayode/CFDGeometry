@@ -8,6 +8,7 @@ import geopandas as gpd
 import numpy as np
 from shapely.geometry import Point, Polygon
 
+from cfd_geometry.constants import DEFAULT_DEM_MAX_RESOLUTION, DEFAULT_TARGET_CRS
 from cfd_geometry.raster.elevation import (
     get_elevation_at_points,
     load_elevation_raster,
@@ -100,13 +101,26 @@ def apply_lidar_heights_to_gdf(
     source_column: str = "height_source",
     percentile: float = 95.0,
     default_height: float = 9.0,
+    target_crs: str | None = None,
+    max_resolution: int | None = DEFAULT_DEM_MAX_RESOLUTION,
 ) -> gpd.GeoDataFrame:
     """Set footprint heights from LiDAR DSM (optional DTM for CHM)."""
     dsm_path = str(dsm_path)
-    dsm_data = load_elevation_raster(dsm_path, build_interpolator=True)
+    crs = target_crs or (str(gdf.crs) if gdf.crs else DEFAULT_TARGET_CRS)
+    dsm_data = load_elevation_raster(
+        dsm_path,
+        crs,
+        build_interpolator=True,
+        max_resolution=max_resolution,
+    )
     dtm_data = None
     if dtm_path:
-        dtm_data = load_elevation_raster(str(dtm_path), build_interpolator=True)
+        dtm_data = load_elevation_raster(
+            str(dtm_path),
+            crs,
+            build_interpolator=True,
+            max_resolution=max_resolution,
+        )
 
     if gdf.crs and str(gdf.crs) != str(dsm_data.get("crs", gdf.crs)):
         work = gdf.to_crs(dsm_data["crs"])

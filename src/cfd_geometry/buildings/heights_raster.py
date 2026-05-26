@@ -7,6 +7,7 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 
+from cfd_geometry.constants import DEFAULT_TARGET_CRS
 from cfd_geometry.raster.elevation import get_elevation_at_point, load_elevation_raster
 
 
@@ -21,7 +22,8 @@ def sample_heights_from_raster(
 ) -> gpd.GeoDataFrame:
     """Assign each footprint height from raster value at centroid (metric CRS)."""
     raster_path = str(raster_path)
-    elev_data = load_elevation_raster(raster_path, build_interpolator=True)
+    crs = str(gdf.crs) if gdf.crs else DEFAULT_TARGET_CRS
+    elev_data = load_elevation_raster(raster_path, crs, build_interpolator=True)
 
     if gdf.crs and str(gdf.crs) != str(elev_data.get("crs", gdf.crs)):
         work = gdf.to_crs(elev_data["crs"])

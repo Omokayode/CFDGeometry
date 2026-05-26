@@ -233,4 +233,5 @@ def _buildings_with_lidar_heights(
         dtm_path=dtm_path,
         percentile=lidar_percentile,
         default_height=default_height,
+        target_crs=str(gdf.crs) if gdf.crs else None,
     )
