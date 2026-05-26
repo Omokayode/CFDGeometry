@@ -118,6 +118,19 @@ def download_domain(config: DownloadConfig) -> DownloadResult:
             result.files["dtm"] = dtm_path
             result.feature_counts["dtm"] = 1
 
+        if config.clip_rasters_to_dem:
+            from cfd_geometry.raster.clip import clip_rasters_to_dem
+
+            dem_path = config.output_dir / config.dem_filename
+            extras = [
+                p
+                for key in ("dsm", "dtm")
+                if (p := result.files.get(key)) is not None
+            ]
+            if extras and (dem_path.exists() or raster_bbox is not None):
+                print("Clipping DSM/DTM to DEM study extent:")
+                clip_rasters_to_dem(dem_path, extras, bbox=raster_bbox)
+
     print("\nDownload summary:")
     for name, path in result.files.items():
         count = result.feature_counts.get(name, 0)

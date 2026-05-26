@@ -31,6 +31,7 @@ class DownloadConfig:
     dtm_filename: str = "dtm.tif"
     opentopography_dsm_product: str = "COP30"
     opentopography_dtm_product: str = "SRTMGL1"
+    clip_rasters_to_dem: bool = True
     buildings_filename: str = "buildings.shp"
     trees_filename: str = "trees.shp"
     highways_filename: str = "highways.shp"

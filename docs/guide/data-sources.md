@@ -49,6 +49,21 @@ Python: `cfd_geometry.download.download_dsm_opentopography`, `download_lidar_ras
 
 Area limits apply (e.g. COP30 ≤ ~450k km²; USGS10m ≤ ~25k km²). Use a tight bbox or `--dem-bbox`.
 
+After download, **DSM/DTM are clipped to match `dem.tif`** (same building-buffer extent). OpenTopography COP30 tiles can be much larger than the requested bbox; clipping keeps file size and LiDAR sampling aligned with the DEM.
+
+To limit the **study area** (not just the raster file):
+
+```bash
+# Street/point buffer (~500 m box) instead of full city admin boundary when geocoding fails the polygon path
+cfd-geometry domain -o data --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA" --dsm --dem
+
+# Explicit WGS84 bounds for OSM + all rasters
+cfd-geometry domain -o data --dem-bbox -88.05 43.03 -87.98 43.08 --dsm --dem
+
+# Padding around building footprints only (default 200 m per side)
+cfd-geometry domain -o data --place "..." --dsm --dem --dem-buffer-m 200
+```
+
 ## Canopy / building height rasters
 
 Optional user-supplied GeoTIFFs:

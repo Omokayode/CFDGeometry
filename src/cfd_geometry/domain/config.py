@@ -62,6 +62,7 @@ class DomainConfig:
     terrain_z_reference: str = "center"
     dem_buffer_m: float = DEFAULT_DEM_BUFFER_M
     dem_bbox: Bbox | None = None
+    clip_rasters_to_dem: bool = True
     workers: int = 1
     export_openfoam: bool = False
     refinement_buffer_m: float = 10.0

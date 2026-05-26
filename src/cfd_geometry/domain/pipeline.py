@@ -171,6 +171,14 @@ def build_domain(config: DomainConfig) -> DomainResult:
                 product=config.opentopography_dtm_product,
             )
             inputs["dtm"] = dtm_path
+
+        if config.clip_rasters_to_dem and raster_bbox is not None:
+            from cfd_geometry.raster.clip import clip_rasters_to_dem
+
+            extras = [p for key in ("dsm", "dtm") if (p := inputs.get(key))]
+            if extras and config.dem_tif.exists():
+                print("Clipping DSM/DTM to DEM study extent:")
+                clip_rasters_to_dem(config.dem_tif, extras, bbox=raster_bbox)
     else:
         inputs = _existing_vector_inputs(config)
         if not inputs:
@@ -210,6 +218,14 @@ def build_domain(config: DomainConfig) -> DomainResult:
                 product=config.opentopography_dtm_product,
             )
             inputs["dtm"] = dtm_path
+
+        if config.clip_rasters_to_dem and raster_bbox is not None:
+            from cfd_geometry.raster.clip import clip_rasters_to_dem
+
+            extras = [p for key in ("dsm", "dtm") if (p := inputs.get(key))]
+            if extras and config.dem_tif.exists():
+                print("Clipping DSM/DTM to DEM study extent:")
+                clip_rasters_to_dem(config.dem_tif, extras, bbox=raster_bbox)
 
     result.input_files = dict(inputs)
 
