@@ -1,183 +1,224 @@
-# Tools
+# CFD Geometry
 
-This directory contains various tools and utilities for wind around buildings research.
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb)
 
-## Overview
+Python package for building **STL geometry** from GIS and elevation data, aimed at **urban wind / OpenFOAM** workflows.
 
-The tools in this folder assist with analysis, data processing, and visualization related to wind flow patterns around building structures. They support converting GIS and raster data to STL files, generating terrain and building models, and processing height and offset data.
+**Try it:** [Colab tutorial](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) · VS Code: `notebooks/cfd_geometry_quickstart.ipynb`. See [notebooks/README.md](notebooks/README.md).
 
-## Available Tools
+## Install
 
-### Main Scripts
-#### Example Folder Structure
-
-```plaintext
-Tools/
-├── baseGenerator.py
-├── basewTerrainFast.py
-├── buildingstoSTLTestHeightCombinedOffset.py
-├── highwaytoSTLHardoffset.py
-├── highwaywRaster.py
-├── offsets.py
-├── stlClipper.py
-├── stlClipperwBase.py
-├── terraintoSTL.py
-├── terraintoSTL2fixedbase.py
-├── treestoSTLCombinedOffset.py
-├── workingVersion/
-│   ├── basewTerrainFast.py
-│   ├── buildingstoSTL.py
-│   ├── highwaytoSTL.py
-│   ├── stlClipper.py
-│   └── treestoSTL.py
-└── wRaster/
-    ├── buildingwRaster.py
-    ├── highwaywRaster.py
-    ├── terrainatoSTL.py
-    └── treeswRaster.py
-└── deprecated/
-    ├── basewTerrainSlow.py
-    ├── buildingstoSTLFanTwEstHeights.py
-    ├── buildingstoSTLFanTriangulation.py
-    ├── highwaytoSTL.py
-    ├── treestoSTL.py
+```bash
+cd CFDGeometry
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m pip install -U pip setuptools wheel
+python -m pip install -e ".[dev]"
 ```
 
+Use **`python -m pip`** (not bare `pip`) so you do not hit macOS system Python 2.7 / an old pip that cannot do editable installs from `pyproject.toml` alone.
 
-### Main Dir
-- [**baseGenerator.py**](baseGenerator.py)  
-    - Generates a rectangular base in STL format that can be added to existing terrain.
-    - Output: STL file with a rectangular base.
+Optional extras:
 
-- [**basewTerrainFast.py**](basewTerrainFast.py)  
-    - Quickly generates base terrain data using raster inputs.
-    - Accepts a clipped terrain as input.
-    - Creates a base for the terrain using a retriangulation method for faster processing.
+- `pip install -e ".[download]"` — auto-download OSM shapefiles (and optional DEM) via OSMnx
+- `pip install -e ".[notebook]"` — interactive map extent picker for Jupyter / VS Code notebooks
+- `pip install -e ".[gdal]"` — alternate DEM readers when rasterio cannot open a file
 
-- [**basewTerrainSlow.py**](basewTerrainSlow.py)  
-    - Accepts a clipped terrain as input.
-    - Computes all triangles for the base, resulting in slower processing but potentially higher accuracy.
+Without installing, run modules with `PYTHONPATH=src python3 -m cfd_geometry.cli.main --help`.
 
-- [**buildingstoSTL.py**](buildingstoSTL.py)  
-    - Converts building data into STL files for 3D modeling.
-    - Accepts a shapefile (`.shp`) as input.
-    - Projects building footprints for export.
+## Quick start (CLI)
 
-- [**buildingstoSTLTestHeightCombinedOffset.py**](buildingstoSTLTestHeightCombinedOffset.py)  
-    - Converts building data to STL format.
-    - Tests combined height and offset calculations.
-    - Accepts a shapefile (`.shp`) as input.
-    - Projects building footprints for export.
+### Full domain pipeline (download + STL)
 
-- [**getBuildingHeight.py**](getBuildingHeight.py)  
-    - Extracts or calculates building heights from input data.
+One command: fetch OSM data under `data/input/`, extrude aligned STLs to `data/output/`:
 
-- [**highwaywRaster.py**](highwaywRaster.py)  
-    - Processes highway data using raster inputs.
+```bash
+pip install -e ".[download]"
 
+cfd-geometry domain -o data --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA"
+```
 
-- [**offsets.py**](offsets.py)  
-    - Handles offset calculations for terrain, buildings, or highways.
+Default download extent for streets/points is about **500 m × 500 m** (`--buffer-m 250`). Widen with `--buffer-m 500` if needed.
 
-- [**stlClipper.py**](stlClipper.py)  
-    - Clips or modifies STL files, possibly for fitting or trimming models.
+Use **`--study-buffer-m`** to set the same padding for both OSM and DEM (e.g. `--study-buffer-m 300`). Otherwise OSM uses `--buffer-m` (default 250) and DEM uses `--dem-buffer-m` (default 200).
 
-- [**stlClipperwBase.py**](stlClipperwBase.py)  
-    - Clips STL files with reference and adds a base to it.
-    - It takes in the terrain STL as input and creates a clipped terrain with a fitted base.
+Options: `--no-trees`, `--highways`, `--dem`, `--terrain`, `--no-download` (use existing `data/input/`).
 
-- [**terrainatoSTL.py**](terrainatoSTL.py)  
-    - Converts terrain raster data into STL files.
-    - Accepts 1 meter elevation DEM as input.
-    - Returns an STL format for the terrain as output.
+Tree heights: OSM `height` tags when present, else sample a user-supplied canopy GeoTIFF (`--canopy-raster data/input/canopy_height.tif`), else 10 m default per tree. No automatic ETH download.
 
+With `--dem`: also writes `buildings_on_dem.stl`, `trees_on_dem.stl`, and (with `--highways`) `highways_on_dem.stl`. DEM extent defaults to **200 m padding** around buildings. Override with `--dem-buffer-m` or `--dem-bbox WEST SOUTH EAST NORTH`.
 
-- [**terraintoSTL2fixedbase.py**](terraintoSTL2fixedbase.py)  
-    - Converts terrain raster data to STL with a fixed base.
+After a domain build, see `output/domain_summary.json` for offsets, CRS, and file paths.
 
-- [**treestoSTLCombinedOffset.py**](treestoSTLCombinedOffset.py)  
-    - Converts tree data to STL with combined offset handling.
+Use DEM-aligned STLs with `terrain.stl` in ParaView/OpenFOAM; flat `buildings.stl` / `trees.stl` stay at z=0 for simple setups.
 
-### wRaster Subdirectory
- 
- <strong>All the code in this sub dir is terrain aware. It offsets by the height of the terrain from sea level and adds relative elevation for buildings, trees or highways present in the domain.</strong>
+### Auto-download inputs only (optional)
 
- 
-- [**wRaster/buildingwRaster.py**](wRaster/buildingwRaster.py)  
-    Processes building data using raster inputs.
+Fetch OpenStreetMap buildings, trees, and roads for a place or bounding box:
 
-- [**wRaster/highwaywRaster.py**](wRaster/highwaywRaster.py)  
-    Processes highway data using raster inputs.
+```bash
+pip install -e ".[download]"
 
-- [**wRaster/terrainatoSTL.py**](wRaster/terrainatoSTL.py)  
-    Converts raster terrain data to STL format.
+# By place name (geocoded; cities use admin boundaries)
+cfd-geometry download -o data/input --place "Milwaukee, Wisconsin, USA"
 
-- [**wRaster/treeswRaster.py**](wRaster/treeswRaster.py)  
-    Processes tree data using raster inputs.
+# Streets/points: ~500 m x 500 m box by default (--buffer-m 250)
+cfd-geometry download -o data/input --place "Kilbourn Avenue, Milwaukee, Wisconsin, USA"
 
-### workingVersion Subdirectory
- 
- <strong>All the code in this sub dir is a working clone of what is available in the main dir. It serves as backup for what works.</strong>
+# By WGS84 bbox: west south east north
+cfd-geometry download -o data/input --bbox -88.0 43.0 -87.5 43.5 --layers buildings trees
 
-- [**basewTerrainFast.py**](workingVersion/basewTerrainFast.py)  
-    - Quickly generates base terrain data using raster inputs.
+# Optional SRTM DEM (free OpenTopography API key required)
+export OPENTOPOGRAPHY_API_KEY='your-key'
+cfd-geometry download -o data/input --place "Oklahoma City, OK" --dem
+```
 
-- [**buildingstoSTL.py**](workingVersion/buildingstoSTL.py)  
-    - Converts building data into STL files for 3D modeling.
+Writes `buildings.shp`, `trees.shp`, `highways.shp`, and optionally `dem.tif` under the output directory.
 
-- [**highwaytoSTL.py**](workingVersion/highwaytoSTL.py)  
-    - Converts highway or road data into STL files.
+### Extrude to STL
 
-- [**stlClipper.py**](workingVersion/stlClipper.py)  
-    - Clips or modifies STL files.
+Compute a shared origin so terrain, buildings, and trees align:
 
-- [**treestoSTL.py**](workingVersion/treestoSTL.py)  
-    - Converts tree or vegetation data into STL files.
+```bash
+cfd-geometry offset path/to/buildings.shp path/to/trees.shp
+```
 
+Build layers (use the same shapefile list for `--align-with`):
 
-### Deprecated
+```bash
+# OSM-style heights + auto UTM for WGS84 shapefiles (default)
+cfd-geometry buildings buildings.shp -o buildings.stl --align-with buildings.shp trees.shp
+# --align-with must be vector layers (.shp), not STL outputs
 
-   
-- [**buildingstoSTLFanTwEstHeights.py**](buildingstoSTLFanTwEstHeights.py)  
-    - Converts building data to STL using a fan triangulation method with estimated heights.<br>
-    -  <span style="color:red"> **_Deprecated: Consider this script outdated and use alternatives if possible._**
+# Footprint-area heights (legacy) and OpenFOAM blockMesh hints
+cfd-geometry buildings buildings.shp -o buildings.stl --height-source area --ground-buffer 500
 
-- [**buildingstoSTLFanTriangulation.py**](buildingstoSTLFanTriangulation.py)  
-    - Converts building data to STL using fan triangulation.
-    - Basic level, does not get the height of buildings and no offset due to terrain
-    - <span style="color:red">**_Deprecated: Consider this script outdated and use alternatives if possible._**
+cfd-geometry buildings-dem buildings.shp dem.tif -o buildings.stl --align-with buildings.shp
+cfd-geometry trees trees.shp -o trees.stl --align-with buildings.shp trees.shp
+cfd-geometry trees-dem trees.shp dem.tif -o trees.stl --align-with buildings.shp
+cfd-geometry highways roads.shp -o roads.stl --align-with buildings.shp --clip-to buildings.shp
+cfd-geometry terrain dem.tif -o terrain.stl --offset-x 424265.04 --offset-y 4765565.05
+# Use the same offset as buildings; terrain Z defaults to "center" so ground ≈ z=0
+cfd-geometry clip terrain.stl -o terrain_clipped.stl --bounds -500 -500 300 500 500 720
+```
 
-- [**highwaytoSTL.py**](highwaytoSTL.py)  
-    - Converts highway or road data into STL files.
-    - <span style="color:red">**_Deprecated: Consider this script outdated and use alternatives if possible._**
+### OpenFOAM snippets (`--openfoam`)
 
-- [**highwaytoSTLHardoffset.py**](highwaytoSTLHardoffset.py)  
-    - Converts highway data to STL with hardcoded offsets.
-    - this is not terrain aware
-    - <span style="color:red">**_Deprecated: Consider this script outdated and use alternatives if possible._**
+Writes `blockMeshDict`, `snappyHexMeshDict`, and `snappyHexMeshConfig.command` under the output directory (no separate `blockMeshDict_vertices.txt`).
 
-- [**highwaywSTL.py**](highwaywSTL.py)  
-    - Converts highway raster data to STL format.
-    - <span style="color:red">**_Deprecated: Consider this script outdated and use alternatives if possible._**
+```bash
+cfd-geometry domain --osm "..." --dem --output output/ --openfoam --ground-buffer 500
+cfd-geometry buildings buildings.shp -o output/buildings.stl --openfoam --ground-buffer 500
+```
 
-- [**treestoSTL.py**](treestoSTL.py)  
-    - Converts tree or vegetation data into STL files.
-    - <span style="color:red">**_Deprecated: Consider this script outdated and use alternatives if possible._**
-    
-## Usage
+Optional: `--refinement-buffer-m 10` (snappy refinement box padding), `--openfoam-cell-size 5` (blockMesh cell size).
 
-Each tool may have its own specific usage instructions. Refer to individual tool documentation or comments within the source code for detailed usage information.
+## Notebooks
+
+| Environment | Notebook |
+|-------------|----------|
+| **Google Colab** | [colab_quickstart.ipynb](https://colab.research.google.com/github/Omokayode/CFDGeometry/blob/main/notebooks/colab_quickstart.ipynb) |
+| **VS Code (local)** | `notebooks/cfd_geometry_quickstart.ipynb` after `pip install -e ".[notebook,download]"` |
+
+Colab and VS Code use **separate notebooks**. Colab installs from GitHub with `--no-deps` to protect numpy; the local notebook editable-installs from your clone.
+
+Minimal extent-only flow:
+
+```python
+from cfd_geometry.notebook import select_extent, setup_colab_widgets
+
+setup_colab_widgets()  # no-op outside Colab
+sel = select_extent(place="Milwaukee, Wisconsin, USA")
+# draw rectangle → "Use this extent" → sel.bbox (WGS84, same as CLI --bbox)
+```
+
+Preview STLs in the notebook (Plotly 3D, uses trimesh to load meshes):
+
+```python
+from cfd_geometry.notebook import plot_domain_stls, plot_stl_files
+
+plot_domain_stls(result, layers=("buildings", "trees"), max_triangles=8000)
+# or: plot_stl_files({"buildings": "data/output/buildings.stl"})
+```
+
+## Python API
+
+```python
+import geopandas as gpd
+from cfd_geometry import (
+    get_combined_offset,
+    extrude_buildings_to_stl,
+    prepare_buildings_gdf,
+    dem_to_stl_with_offset,
+    STLClipper,
+    OptimizedRectangularBaseGenerator,
+)
+
+# From shapefile
+ox, oy = get_combined_offset(["buildings.shp", "trees.shp"])
+extrude_buildings_to_stl("buildings.shp", "buildings.stl", combined_offset=(ox, oy))
+
+# From GeoDataFrame (QGIS / notebook / VoxCity-style columns: height, min_height, id)
+gdf = gpd.read_file("buildings.shp")  # or your own GeoDataFrame
+gdf["height"] = 12.0  # per-building heights in meters
+extrude_buildings_to_stl(
+    gdf,
+    "buildings.stl",
+    height_source="column",
+    height_col="height",
+    combined_offset=(ox, oy),
+)
+
+dem_to_stl_with_offset("dem.tif", "terrain.stl", ox, oy)
+```
+
+## Pluggable sources (strategies)
+
+Height, ground, and tree geometry use small strategy objects instead of scattered flags:
+
+| Strategy | Names | Role |
+|----------|-------|------|
+| **Height** | `osm`, `area`, `column`, `composite`, `raster`, `default` | Building extrusion heights |
+| **Ground** | `flat`, `dem` | Base Z (flat or DEM sampler) |
+| **Tree** | `canopy`, `cylinder`, `sphere`, `skip` | Tree mesh shape |
+
+Recommended for CFD studies: **`--height-source composite`** — uses column heights when present, then OSM rules, area tiers, and optional **`--complement-raster`** for gaps. Use **`--resolve-overlaps fast`** to drop duplicate footprints.
+
+```python
+from cfd_geometry.sources import height_source_from_name, HeightAssignOptions
+
+strategy = height_source_from_name(
+    "composite",
+    options=HeightAssignOptions(complement_raster="building_heights.tif"),
+)
+gdf, col = strategy.apply(buildings_gdf)
+```
+
+## Package layout
+
+```
+src/cfd_geometry/
+├── geo/          # CRS repair, combined offsets
+├── mesh/         # STL I/O, polygon extrusion
+├── raster/       # DEM loading and elevation sampling
+├── buildings/    # OSM heights, geometry repair, overlaps, trimesh extrusion
+├── sources/      # HeightSource, GroundSource, TreeModel strategies
+├── domain/       # build_domain() orchestrator (download + extrude)
+├── download/     # OSM / optional DEM auto-download
+├── openfoam/     # blockMeshDict vertex snippets
+├── trees/        # Point trees (+ DEM-aware extrude_dem)
+├── highways/     # Road linework extrusion
+├── terrain/      # DEM → terrain STL
+├── clipper/      # Bounding-box STL clip
+├── base/         # Terrain-fitted solid base
+└── cli/          # ``cfd-geometry`` commands
+```
+
+## Legacy scripts
+
+Older standalone `.py` files at the repo root and under `legacy/` still exist for reference. Prefer the package and CLI for new work. See [legacy/README.md](legacy/README.md).
 
 ## Requirements
 
-- Check individual tool files for specific dependencies and requirements.
-- Ensure proper environment setup before running tools.
-
-## Contributing
-
-When adding new tools to this directory:
-1. Include clear documentation.
-2. Add appropriate comments in code.
-3. Update this README with tool descriptions.
-4. Test thoroughly before committing.
-
+- Python 3.9+
+- geopandas, shapely, trimesh, mapbox-earcut, rasterio, numpy, scipy, pandas, pyproj

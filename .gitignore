@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.venv/
+venv/
+.env
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local data and notes
+data/
+notes.md
+
+# Local outputs
+*.stl
+!examples/**/*.stl
