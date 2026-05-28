@@ -297,6 +297,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="cfd-geometry",
         description="Convert GIS/DEM data to STL for urban wind CFD",
+        epilog=(
+            "OpenFOAM: use --openfoam on 'domain' or 'buildings'. "
+            "Docs: https://omokayode.github.io/CFDGeometry/"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--epsg",

@@ -19,6 +19,9 @@ venv/
 data/
 notes.md
 
+# MkDocs build output
+site/
+
 # Local outputs
 *.stl
 !examples/**/*.stl
